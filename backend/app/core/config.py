@@ -31,6 +31,17 @@ class Settings(BaseSettings):
 
     MAX_UPLOAD_SIZE_MB: int = 10
 
+    # Almacenamiento de archivos (Fase 5): bucket S3-compatible, MinIO en desarrollo.
+    # S3_ENDPOINT_URL es la direccion INTERNA (red de Docker) que usa el backend para hablar
+    # con el storage. Los archivos nunca se sirven con URLs firmadas directas al navegador:
+    # el backend siempre hace de proxy (ver DocumentService.get_file_stream), asi que no hace
+    # falta que este endpoint sea alcanzable desde fuera de la red de contenedores.
+    S3_ENDPOINT_URL: str = "http://minio:9000"
+    S3_ACCESS_KEY: str = "lifehub"
+    S3_SECRET_KEY: str = "lifehub12345"
+    S3_BUCKET_NAME: str = "lifehub"
+    S3_REGION: str = "us-east-1"
+
     @property
     def sqlalchemy_database_uri(self) -> str:
         if self.DATABASE_URL:

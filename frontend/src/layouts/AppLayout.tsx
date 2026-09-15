@@ -13,6 +13,8 @@ const NAV_ITEMS = [
   { to: "/subscriptions", label: "Suscripciones", icon: "🔁" },
   { to: "/households", label: "Hogar", icon: "🏡" },
   { to: "/shopping", label: "Compras", icon: "🛒" },
+  { to: "/documents", label: "Documentos", icon: "📄" },
+  { to: "/vehicles", label: "Vehículos", icon: "🚗" },
   { to: "/settings", label: "Configuración", icon: "⚙️" },
 ]
 

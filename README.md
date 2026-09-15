@@ -2,7 +2,7 @@
 
 Panel de control personal para organizar tareas, finanzas, compras, vencimientos, documentos, vehículos y más, todo en un solo lugar.
 
-> **Estado actual: Fase 4 completada.** Arquitectura, base de datos, autenticación (con recuperación de contraseña por código), dashboard configurable, tareas, recordatorios/vencimientos, finanzas personales, suscripciones, compras inteligentes y hogares multi-usuario funcionando de punta a punta. El resto de los módulos (documentos, vehículos, calendario, IA, notificaciones) se construyen en las fases siguientes — ver [Roadmap](#roadmap).
+> **Estado actual: Fase 5 completada.** Arquitectura, base de datos, autenticación (con recuperación de contraseña por código), dashboard configurable, tareas, recordatorios/vencimientos, finanzas personales, suscripciones, compras inteligentes, hogares multi-usuario y documentos/vehículos funcionando de punta a punta. El resto de los módulos (calendario, IA, notificaciones) se construyen en las fases siguientes — ver [Roadmap](#roadmap).
 
 ## Why LifeHub?
 
@@ -10,7 +10,7 @@ Organizar la vida cotidiana hoy implica saltar entre una app de notas, el home b
 
 LifeHub existe para bajar esa carga mental: un único panel que responde preguntas simples como *"¿qué tengo que hacer hoy?"*, *"¿en qué gasté este mes?"* y *"¿qué está por vencer?"* — sin abrir cinco aplicaciones distintas.
 
-## Funcionalidades (Fases 1-4)
+## Funcionalidades (Fases 1-5)
 
 - Registro e inicio de sesión con JWT (access + refresh token).
 - Refresh tokens persistidos y revocables: el logout invalida la sesión de verdad, no solo del lado del cliente.
@@ -28,14 +28,16 @@ LifeHub existe para bajar esa carga mental: un único panel que responde pregunt
 - **Hogares multi-usuario reales**: crear un hogar, invitar a otras personas por email, aceptar/rechazar la invitación, roles dueño/miembro, expulsar o abandonar, eliminar el hogar (las tareas y listas compartidas quedan como personales, no se borran).
 - **Tareas de hogar**: asignar una tarea a cualquier miembro aceptado del hogar; la tarea es visible y editable por todo el hogar, pero solo quien la creó puede borrarla.
 - **Compras**: listas personales o compartidas con un hogar, ítems con cantidad/unidad/categoría, y **sugerencias de recompra** calculadas a partir del historial de compras propio (heurística simple por intervalo promedio entre compras, presentada siempre como sugerencia, nunca como certeza).
+- **Documentos**: DNI, pasaporte, seguros, garantías, contratos y facturas con categoría, vencimiento opcional y notas. Cada documento admite un archivo adjunto (subida, descarga y reemplazo) guardado en un bucket S3-compatible privado (MinIO en desarrollo) — el backend siempre hace de proxy al leerlo, nunca se expone una URL pública directa. Filtro por categoría y por "vencen en los próximos N días".
+- **Vehículos**: alta de vehículos (marca, modelo, año, patente, kilometraje) con historial de mantenimiento (cambios de aceite, service, neumáticos, etc.), costo, y próximo vencimiento por fecha o kilometraje. Registrar un mantenimiento con un kilometraje mayor al actual actualiza automáticamente el odómetro del vehículo. Documentos y vehículos son estrictamente personales (no se asocian a un hogar), a diferencia de tareas/compras.
 
 ## Stack
 
-**Backend:** Python 3.12, FastAPI, SQLAlchemy 2.0, PostgreSQL 16, Pydantic v2, Alembic, JWT (PyJWT), bcrypt, pytest.
+**Backend:** Python 3.12, FastAPI, SQLAlchemy 2.0, PostgreSQL 16, Pydantic v2, Alembic, JWT (PyJWT), bcrypt, boto3 (storage S3-compatible), pytest.
 
 **Frontend:** React 19, TypeScript, Vite, Tailwind CSS v4, React Router, Zustand, Axios.
 
-**Infraestructura:** Docker, Docker Compose.
+**Infraestructura:** Docker, Docker Compose, MinIO (almacenamiento de archivos S3-compatible en desarrollo).
 
 ## Arquitectura
 
@@ -94,11 +96,12 @@ python -c "import secrets; print(secrets.token_urlsafe(64))"
 docker compose up -d
 ```
 
-Esto levanta PostgreSQL, el backend (aplicando las migraciones automáticamente al arrancar) y el frontend.
+Esto levanta PostgreSQL, MinIO (almacenamiento de archivos), el backend (aplicando las migraciones automáticamente al arrancar) y el frontend.
 
 - Frontend: http://localhost:5173
 - API: http://localhost:8000
 - Documentación interactiva (Swagger): http://localhost:8000/api/docs
+- Consola de MinIO: http://localhost:9001 (usuario/clave: los valores de `S3_ACCESS_KEY`/`S3_SECRET_KEY` del `.env`)
 
 ### 3. Migraciones
 
@@ -124,6 +127,7 @@ docker compose exec backend pytest -v
 | `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | Credenciales de la base de datos. |
 | `BACKEND_CORS_ORIGINS` | Lista JSON de orígenes permitidos por CORS. |
 | `OPENAI_API_KEY` | Se usa recién en la Fase 7 (asistente de IA). Opcional. |
+| `S3_ENDPOINT_URL` / `S3_ACCESS_KEY` / `S3_SECRET_KEY` / `S3_BUCKET_NAME` / `S3_REGION` | Almacenamiento de archivos (documentos adjuntos). MinIO en desarrollo, cualquier storage S3-compatible en producción. |
 | `VITE_API_URL` | URL base de la API que consume el frontend. |
 
 ## Seguridad
@@ -141,7 +145,7 @@ docker compose exec backend pytest -v
 - [x] **Fase 2** — Dashboard configurable, tareas, recordatorios y vencimientos.
 - [x] **Fase 3** — Finanzas personales y suscripciones.
 - [x] **Fase 4** — Lista de compras inteligente y hogar.
-- [ ] **Fase 5** — Documentos y vehículos.
+- [x] **Fase 5** — Documentos y vehículos.
 - [ ] **Fase 6** — Calendario integrado.
 - [ ] **Fase 7** — Asistente de IA.
 - [ ] **Fase 8** — Notificaciones (in-app, email, push).

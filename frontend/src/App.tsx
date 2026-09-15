@@ -8,6 +8,7 @@ import { LoginPage } from "@/pages/auth/LoginPage"
 import { RegisterPage } from "@/pages/auth/RegisterPage"
 import { DashboardPage } from "@/pages/dashboard/DashboardPage"
 import { SettingsPage } from "@/pages/dashboard/SettingsPage"
+import { DocumentsPage } from "@/pages/documents/DocumentsPage"
 import { FinancePage } from "@/pages/finance/FinancePage"
 import { HouseholdDetailPage } from "@/pages/households/HouseholdDetailPage"
 import { HouseholdsPage } from "@/pages/households/HouseholdsPage"
@@ -16,6 +17,7 @@ import { RemindersPage } from "@/pages/reminders/RemindersPage"
 import { ShoppingPage } from "@/pages/shopping/ShoppingPage"
 import { SubscriptionsPage } from "@/pages/subscriptions/SubscriptionsPage"
 import { TasksPage } from "@/pages/tasks/TasksPage"
+import { VehiclesPage } from "@/pages/vehicles/VehiclesPage"
 import { ProtectedRoute } from "@/routes/ProtectedRoute"
 import { PublicOnlyRoute } from "@/routes/PublicOnlyRoute"
 import { useAuthStore } from "@/store/authStore"
@@ -45,6 +47,8 @@ export default function App() {
           <Route path="/households" element={<HouseholdsPage />} />
           <Route path="/households/:id" element={<HouseholdDetailPage />} />
           <Route path="/shopping" element={<ShoppingPage />} />
+          <Route path="/documents" element={<DocumentsPage />} />
+          <Route path="/vehicles" element={<VehiclesPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Route>

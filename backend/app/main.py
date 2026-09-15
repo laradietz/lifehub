@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -6,14 +8,23 @@ from app.core.config import settings
 from app.core.logging import setup_logging
 from app.db.base import Base  # noqa: F401  (registra todos los modelos antes de configurar los mappers)
 from app.middleware.error_handler import register_exception_handlers
+from app.services.storage_service import get_storage_service
 
 setup_logging()
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    get_storage_service().ensure_bucket()
+    yield
+
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     docs_url=f"{settings.API_V1_STR}/docs",
     redoc_url=f"{settings.API_V1_STR}/redoc",
+    lifespan=lifespan,
 )
 
 app.add_middleware(

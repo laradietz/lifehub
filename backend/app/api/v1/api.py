@@ -4,6 +4,7 @@ from app.api.v1.endpoints import (
     auth,
     categories,
     dashboard,
+    documents,
     expenses,
     finance,
     households,
@@ -14,6 +15,7 @@ from app.api.v1.endpoints import (
     subscriptions,
     tasks,
     users,
+    vehicles,
 )
 
 api_router = APIRouter()
@@ -30,3 +32,5 @@ api_router.include_router(subscriptions.router, prefix="/subscriptions", tags=["
 api_router.include_router(finance.router, prefix="/finance", tags=["finance"])
 api_router.include_router(households.router, prefix="/households", tags=["households"])
 api_router.include_router(shopping.router, prefix="/shopping", tags=["shopping"])
+api_router.include_router(documents.router, prefix="/documents", tags=["documents"])
+api_router.include_router(vehicles.router, prefix="/vehicles", tags=["vehicles"])
