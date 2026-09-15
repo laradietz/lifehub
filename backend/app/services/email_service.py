@@ -9,8 +9,10 @@ class EmailService:
     la implementacion interna de estos metodos.
     """
 
-    def send_password_reset(self, to_email: str, token: str) -> None:
-        logger.info("Password reset solicitado para %s (token generado, no se loguea el valor).", to_email)
+    def send_password_reset_code(self, to_email: str, code: str) -> None:
+        # En un entorno real este codigo viaja unicamente por email; en desarrollo lo
+        # logueamos para poder probar el flujo sin tener un proveedor de email configurado.
+        logger.info("Codigo de restablecimiento de contrasena para %s: %s", to_email, code)
 
     def send(self, to_email: str, subject: str, body: str) -> None:
         logger.info("Email a %s | asunto: %s", to_email, subject)

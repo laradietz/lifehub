@@ -3,8 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.api import api_router
 from app.core.config import settings
+from app.core.logging import setup_logging
 from app.db.base import Base  # noqa: F401  (registra todos los modelos antes de configurar los mappers)
 from app.middleware.error_handler import register_exception_handlers
+
+setup_logging()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

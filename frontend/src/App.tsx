@@ -6,7 +6,6 @@ import { AuthLayout } from "@/layouts/AuthLayout"
 import { ForgotPasswordPage } from "@/pages/auth/ForgotPasswordPage"
 import { LoginPage } from "@/pages/auth/LoginPage"
 import { RegisterPage } from "@/pages/auth/RegisterPage"
-import { ResetPasswordPage } from "@/pages/auth/ResetPasswordPage"
 import { DashboardPage } from "@/pages/dashboard/DashboardPage"
 import { SettingsPage } from "@/pages/dashboard/SettingsPage"
 import { NotFoundPage } from "@/pages/NotFoundPage"
@@ -28,8 +27,6 @@ export default function App() {
         <Route element={<AuthLayout><RegisterPage /></AuthLayout>} path="/register" />
         <Route element={<AuthLayout><ForgotPasswordPage /></AuthLayout>} path="/forgot-password" />
       </Route>
-
-      <Route element={<AuthLayout><ResetPasswordPage /></AuthLayout>} path="/reset-password" />
 
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>

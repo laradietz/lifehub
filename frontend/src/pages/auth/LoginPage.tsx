@@ -17,7 +17,9 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const from = (location.state as { from?: string } | null)?.from ?? "/"
+  const locationState = location.state as { from?: string; resetSuccess?: boolean } | null
+  const from = locationState?.from ?? "/"
+  const showResetSuccess = Boolean(locationState?.resetSuccess)
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -42,6 +44,9 @@ export function LoginPage() {
         </p>
       </div>
 
+      {showResetSuccess && (
+        <Alert variant="success">Tu contraseña se actualizó correctamente. Iniciá sesión con la nueva.</Alert>
+      )}
       {error && <Alert variant="error">{error}</Alert>}
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">

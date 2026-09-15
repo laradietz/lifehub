@@ -35,7 +35,7 @@ export const authService = {
     await api.post("/auth/password-reset/request", { email })
   },
 
-  async confirmPasswordReset(token: string, newPassword: string): Promise<void> {
-    await api.post("/auth/password-reset/confirm", { token, new_password: newPassword })
+  async confirmPasswordReset(email: string, code: string, newPassword: string): Promise<void> {
+    await api.post("/auth/password-reset/confirm", { email, code, new_password: newPassword })
   },
 }

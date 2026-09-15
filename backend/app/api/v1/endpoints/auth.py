@@ -39,11 +39,11 @@ def logout(data: TokenRefreshRequest, db: Session = Depends(get_db)) -> None:
 def request_password_reset(data: PasswordResetRequest, db: Session = Depends(get_db)) -> dict[str, str]:
     service = AuthService(db)
     service.request_password_reset(data.email)
-    return {"detail": "Si el email existe, se enviaron instrucciones para restablecer la contraseña."}
+    return {"detail": "Si el email existe, se envió un código de 6 dígitos para restablecer la contraseña."}
 
 
 @router.post("/password-reset/confirm", status_code=status.HTTP_200_OK)
 def confirm_password_reset(data: PasswordResetConfirm, db: Session = Depends(get_db)) -> dict[str, str]:
     service = AuthService(db)
-    service.confirm_password_reset(data.token, data.new_password)
+    service.confirm_password_reset(data.email, data.code, data.new_password)
     return {"detail": "Contraseña actualizada correctamente."}

@@ -65,6 +65,8 @@ def test_refresh_rotates_and_revokes_previous_token(client):
 
 
 def test_password_reset_flow(client, db_session):
+    import hashlib
+
     from app.models.auth_token import PasswordResetToken
 
     client.post("/api/auth/register", json={"email": "reset@example.com", "password": "supersecret123"})
@@ -75,24 +77,62 @@ def test_password_reset_flow(client, db_session):
     stored = db_session.query(PasswordResetToken).first()
     assert stored is not None
 
-    # Simulamos el token en claro: en un flujo real llega por email, aca solo validamos la logica.
-    import hashlib
-    import secrets
-
-    raw_token = secrets.token_urlsafe(32)
-    stored.token_hash = hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
+    # Simulamos el codigo en claro: en un flujo real llega por email, aca solo validamos la logica.
+    raw_code = "123456"
+    stored.token_hash = hashlib.sha256(raw_code.encode("utf-8")).hexdigest()
     db_session.commit()
 
+    wrong_code_response = client.post(
+        "/api/auth/password-reset/confirm",
+        json={"email": "reset@example.com", "code": "000000", "new_password": "brandnewpassword"},
+    )
+    assert wrong_code_response.status_code == 400
+
     confirm_response = client.post(
-        "/api/auth/password-reset/confirm", json={"token": raw_token, "new_password": "brandnewpassword"}
+        "/api/auth/password-reset/confirm",
+        json={"email": "reset@example.com", "code": raw_code, "new_password": "brandnewpassword"},
     )
     assert confirm_response.status_code == 200
+
+    # El codigo ya usado no debe poder reutilizarse.
+    reuse_response = client.post(
+        "/api/auth/password-reset/confirm",
+        json={"email": "reset@example.com", "code": raw_code, "new_password": "anotherpassword123"},
+    )
+    assert reuse_response.status_code == 400
 
     old_login = client.post("/api/auth/login", data={"username": "reset@example.com", "password": "supersecret123"})
     assert old_login.status_code == 401
 
     new_login = client.post("/api/auth/login", data={"username": "reset@example.com", "password": "brandnewpassword"})
     assert new_login.status_code == 200
+
+
+def test_password_reset_locks_after_too_many_wrong_attempts(client, db_session):
+    import hashlib
+
+    from app.models.auth_token import PasswordResetToken
+
+    client.post("/api/auth/register", json={"email": "lockout@example.com", "password": "supersecret123"})
+    client.post("/api/auth/password-reset/request", json={"email": "lockout@example.com"})
+
+    stored = db_session.query(PasswordResetToken).first()
+    stored.token_hash = hashlib.sha256("123456".encode("utf-8")).hexdigest()
+    db_session.commit()
+
+    for _ in range(5):
+        response = client.post(
+            "/api/auth/password-reset/confirm",
+            json={"email": "lockout@example.com", "code": "000000", "new_password": "brandnewpassword"},
+        )
+        assert response.status_code == 400
+
+    # Incluso con el codigo correcto, ya se agotaron los intentos permitidos.
+    final_attempt = client.post(
+        "/api/auth/password-reset/confirm",
+        json={"email": "lockout@example.com", "code": "123456", "new_password": "brandnewpassword"},
+    )
+    assert final_attempt.status_code == 400
 
 
 def test_password_reset_request_does_not_leak_existing_email(client):

@@ -17,8 +17,17 @@ from app.schemas.user import UserCreate
 from app.services.email_service import EmailService
 
 
+RESET_CODE_LENGTH = 6
+RESET_CODE_TTL_MINUTES = 15
+RESET_CODE_MAX_ATTEMPTS = 5
+
+
 def _hash_token(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def _generate_reset_code() -> str:
+    return f"{secrets.randbelow(10**RESET_CODE_LENGTH):0{RESET_CODE_LENGTH}d}"
 
 
 class AuthService:
@@ -96,21 +105,39 @@ class AuthService:
         user = self.users.get_by_email(email)
         if not user:
             return  # No revelamos si el email existe o no.
-        raw_token = secrets.token_urlsafe(32)
-        expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
-        self.db.add(PasswordResetToken(user_id=user.id, token_hash=_hash_token(raw_token), expires_at=expires_at))
+
+        # Invalidamos cualquier codigo anterior todavia vigente para que solo el
+        # ultimo enviado sea valido (evita tener varios codigos activos a la vez).
+        self.db.query(PasswordResetToken).filter(
+            PasswordResetToken.user_id == user.id, PasswordResetToken.used.is_(False)
+        ).update({"used": True})
+
+        code = _generate_reset_code()
+        expires_at = datetime.now(timezone.utc) + timedelta(minutes=RESET_CODE_TTL_MINUTES)
+        self.db.add(PasswordResetToken(user_id=user.id, token_hash=_hash_token(code), expires_at=expires_at))
         self.db.commit()
-        self.email_service.send_password_reset(user.email, raw_token)
+        self.email_service.send_password_reset_code(user.email, code)
 
-    def confirm_password_reset(self, token: str, new_password: str) -> None:
-        token_hash = _hash_token(token)
-        stored = self.db.query(PasswordResetToken).filter(PasswordResetToken.token_hash == token_hash).first()
-        if not stored or stored.used or stored.expires_at < datetime.now(timezone.utc):
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Token inválido o expirado.")
+    def confirm_password_reset(self, email: str, code: str, new_password: str) -> None:
+        invalid_code_error = HTTPException(status.HTTP_400_BAD_REQUEST, "El código es inválido o expiró.")
 
-        user = self.users.get_by_id(stored.user_id)
+        user = self.users.get_by_email(email)
         if not user:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Token inválido.")
+            raise invalid_code_error
+
+        stored = (
+            self.db.query(PasswordResetToken)
+            .filter(PasswordResetToken.user_id == user.id, PasswordResetToken.used.is_(False))
+            .order_by(PasswordResetToken.created_at.desc())
+            .first()
+        )
+        if not stored or stored.expires_at < datetime.now(timezone.utc) or stored.attempts >= RESET_CODE_MAX_ATTEMPTS:
+            raise invalid_code_error
+
+        if stored.token_hash != _hash_token(code):
+            stored.attempts += 1
+            self.db.commit()
+            raise invalid_code_error
 
         user.hashed_password = security.hash_password(new_password)
         stored.used = True
