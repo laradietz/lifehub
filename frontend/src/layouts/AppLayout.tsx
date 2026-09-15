@@ -7,6 +7,8 @@ import { cn } from "@/utils/cn"
 
 const NAV_ITEMS = [
   { to: "/", label: "Hoy", icon: "🏠", end: true },
+  { to: "/tasks", label: "Tareas", icon: "✅" },
+  { to: "/reminders", label: "Recordatorios", icon: "🔔" },
   { to: "/settings", label: "Configuración", icon: "⚙️" },
 ]
 

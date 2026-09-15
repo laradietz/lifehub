@@ -2,7 +2,7 @@
 
 Panel de control personal para organizar tareas, finanzas, compras, vencimientos, documentos, vehículos y más, todo en un solo lugar.
 
-> **Estado actual: Fase 1 completada.** Arquitectura, base de datos y autenticación funcionando de punta a punta. El resto de los módulos (finanzas, compras, hogar, documentos, vehículos, calendario, IA, notificaciones) se construyen en las fases siguientes — ver [Roadmap](#roadmap).
+> **Estado actual: Fase 2 completada.** Arquitectura, base de datos, autenticación (con recuperación de contraseña por código), dashboard configurable, tareas y recordatorios/vencimientos funcionando de punta a punta. El resto de los módulos (finanzas, compras, hogar, documentos, vehículos, calendario, IA, notificaciones) se construyen en las fases siguientes — ver [Roadmap](#roadmap).
 
 ## Why LifeHub?
 
@@ -10,13 +10,17 @@ Organizar la vida cotidiana hoy implica saltar entre una app de notas, el home b
 
 LifeHub existe para bajar esa carga mental: un único panel que responde preguntas simples como *"¿qué tengo que hacer hoy?"*, *"¿en qué gasté este mes?"* y *"¿qué está por vencer?"* — sin abrir cinco aplicaciones distintas.
 
-## Funcionalidades (Fase 1)
+## Funcionalidades (Fases 1-2)
 
 - Registro e inicio de sesión con JWT (access + refresh token).
 - Refresh tokens persistidos y revocables: el logout invalida la sesión de verdad, no solo del lado del cliente.
-- Recuperación de contraseña (flujo completo de request/confirm; el envío de email es un servicio con interfaz lista para enchufar un proveedor real).
+- Recuperación de contraseña por código de 6 dígitos enviado por email (expira a los 15 minutos, con límite de intentos y reenvío con cooldown). El envío de email es un servicio con interfaz lista para enchufar un proveedor real.
 - Perfil de usuario editable.
-- Dashboard con estado vacío, sidebar de navegación, menú responsive para mobile y manejo de errores/carga.
+- Dashboard **configurable**: el usuario elige qué widgets ver (Hoy, Próximos vencimientos, Resumen semanal) desde Configuración.
+- Tareas con prioridad, categoría, etiquetas y repetición (diaria/semanal/mensual): al completar una tarea recurrente se genera automáticamente la siguiente ocurrencia.
+- Recordatorios/vencimientos con recordatorios anticipados configurables (ej: avisar 30/7/1 días antes) y la misma lógica de repetición automática.
+- Categorías por usuario, con un set inicial sembrado al registrarse y creación rápida desde los formularios.
+- Sidebar de navegación, menú responsive para mobile, estados vacíos, de carga y de error en toda la app.
 - Esquema de base de datos completo para todos los módulos futuros (20 tablas), migrado con Alembic.
 
 ## Stack
@@ -128,7 +132,7 @@ docker compose exec backend pytest -v
 ## Roadmap
 
 - [x] **Fase 1** — Arquitectura, base de datos y autenticación.
-- [ ] **Fase 2** — Dashboard configurable, tareas, recordatorios y vencimientos.
+- [x] **Fase 2** — Dashboard configurable, tareas, recordatorios y vencimientos.
 - [ ] **Fase 3** — Finanzas personales y suscripciones.
 - [ ] **Fase 4** — Lista de compras inteligente y hogar.
 - [ ] **Fase 5** — Documentos y vehículos.

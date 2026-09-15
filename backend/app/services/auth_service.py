@@ -14,6 +14,7 @@ from app.models.user_settings import UserSettings
 from app.repositories.user_repository import UserRepository
 from app.schemas.token import Token
 from app.schemas.user import UserCreate
+from app.services.category_service import seed_default_categories
 from app.services.email_service import EmailService
 
 
@@ -45,6 +46,7 @@ class AuthService:
             full_name=data.full_name,
         )
         self.db.add(UserSettings(user_id=user.id))
+        seed_default_categories(self.db, user.id)
         token = self._issue_tokens(user)
         self.db.commit()
         self.db.refresh(user)

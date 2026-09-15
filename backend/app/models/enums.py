@@ -56,6 +56,7 @@ class HouseholdRole(str, enum.Enum):
 
 class CategoryType(str, enum.Enum):
     TASK = "task"
+    REMINDER = "reminder"
     EXPENSE = "expense"
     INCOME = "income"
     SHOPPING = "shopping"

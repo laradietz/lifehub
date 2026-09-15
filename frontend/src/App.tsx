@@ -9,6 +9,8 @@ import { RegisterPage } from "@/pages/auth/RegisterPage"
 import { DashboardPage } from "@/pages/dashboard/DashboardPage"
 import { SettingsPage } from "@/pages/dashboard/SettingsPage"
 import { NotFoundPage } from "@/pages/NotFoundPage"
+import { RemindersPage } from "@/pages/reminders/RemindersPage"
+import { TasksPage } from "@/pages/tasks/TasksPage"
 import { ProtectedRoute } from "@/routes/ProtectedRoute"
 import { PublicOnlyRoute } from "@/routes/PublicOnlyRoute"
 import { useAuthStore } from "@/store/authStore"
@@ -31,6 +33,8 @@ export default function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route index element={<DashboardPage />} />
+          <Route path="/tasks" element={<TasksPage />} />
+          <Route path="/reminders" element={<RemindersPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Route>
