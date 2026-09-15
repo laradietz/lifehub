@@ -1,3 +1,6 @@
+from decimal import Decimal
+from typing import Optional
+
 from pydantic import BaseModel
 
 from app.schemas.reminder import ReminderRead
@@ -11,7 +14,17 @@ class DashboardToday(BaseModel):
     pending_tasks_total: int
 
 
+class DashboardFinance(BaseModel):
+    currency: str
+    income_this_month: Decimal
+    expenses_this_month: Decimal
+    balance: Decimal
+    top_expense_category: Optional[str] = None
+    subscriptions_monthly_total: Decimal
+
+
 class DashboardSummary(BaseModel):
     today: DashboardToday
     upcoming_reminders: list[ReminderRead]
     week_tasks: list[TaskRead]
+    finance: DashboardFinance

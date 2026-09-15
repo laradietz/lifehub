@@ -8,12 +8,13 @@ import { dashboardService } from "@/services/dashboardService"
 import { settingsService } from "@/services/settingsService"
 import { useAuthStore } from "@/store/authStore"
 import type { DashboardSummary } from "@/types/dashboard"
+import { formatCompactCurrency, formatCurrency } from "@/utils/currency"
 import { formatDate, PRIORITY_TONE } from "@/utils/taskMeta"
 
 function StatTile({ label, value, tone }: { label: string; value: number; tone?: "red" | "default" }) {
   return (
     <div className="flex flex-col gap-1 rounded-lg bg-slate-50 px-4 py-3 dark:bg-slate-800/60">
-      <span className={`text-2xl font-bold ${tone === "red" && value > 0 ? "text-red-600 dark:text-red-400" : "text-slate-900 dark:text-slate-100"}`}>
+      <span className={`text-2xl font-bold whitespace-nowrap ${tone === "red" && value > 0 ? "text-red-600 dark:text-red-400" : "text-slate-900 dark:text-slate-100"}`}>
         {value}
       </span>
       <span className="text-xs text-slate-500 dark:text-slate-400">{label}</span>
@@ -44,9 +45,10 @@ export function DashboardPage() {
   }, [])
 
   const showToday = widgets?.includes("today") ?? true
+  const showFinance = widgets?.includes("finance_summary") ?? true
   const showUpcoming = widgets?.includes("upcoming_due") ?? true
   const showWeek = widgets?.includes("week_summary") ?? true
-  const noWidgets = widgets !== null && !showToday && !showUpcoming && !showWeek
+  const noWidgets = widgets !== null && !showToday && !showFinance && !showUpcoming && !showWeek
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
@@ -84,6 +86,51 @@ export function DashboardPage() {
                 <StatTile label="Vencidas" value={summary.today.tasks_overdue} tone="red" />
                 <StatTile label="Recordatorios hoy" value={summary.today.reminders_due_today} />
               </div>
+            </Card>
+          )}
+
+          {showFinance && summary && (
+            <Card className="p-5">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Finanzas</h2>
+                <Link to="/finance" className="focus-ring text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400">
+                  Ver más
+                </Link>
+              </div>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <div className="flex flex-col gap-1 overflow-hidden rounded-lg bg-slate-50 px-3 py-3 dark:bg-slate-800/60">
+                  <span
+                    title={formatCurrency(summary.finance.income_this_month, summary.finance.currency)}
+                    className="truncate text-lg font-bold text-emerald-600 dark:text-emerald-400"
+                  >
+                    {formatCompactCurrency(summary.finance.income_this_month, summary.finance.currency)}
+                  </span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">Ingresos del mes</span>
+                </div>
+                <div className="flex flex-col gap-1 overflow-hidden rounded-lg bg-slate-50 px-3 py-3 dark:bg-slate-800/60">
+                  <span
+                    title={formatCurrency(summary.finance.expenses_this_month, summary.finance.currency)}
+                    className="truncate text-lg font-bold text-slate-900 dark:text-slate-100"
+                  >
+                    {formatCompactCurrency(summary.finance.expenses_this_month, summary.finance.currency)}
+                  </span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">Gastos del mes</span>
+                </div>
+                <div className="flex flex-col gap-1 overflow-hidden rounded-lg bg-slate-50 px-3 py-3 dark:bg-slate-800/60">
+                  <span
+                    title={formatCurrency(summary.finance.balance, summary.finance.currency)}
+                    className={`truncate text-lg font-bold ${Number.parseFloat(summary.finance.balance) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}
+                  >
+                    {formatCompactCurrency(summary.finance.balance, summary.finance.currency)}
+                  </span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">Saldo</span>
+                </div>
+              </div>
+              {summary.finance.top_expense_category && (
+                <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
+                  Gastaste más en <Badge tone="amber">{summary.finance.top_expense_category}</Badge>
+                </p>
+              )}
             </Card>
           )}
 

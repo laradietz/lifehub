@@ -11,6 +11,18 @@ from app.schemas.category import CategoryCreate
 
 DEFAULT_TASK_CATEGORIES = ["Trabajo", "Personal", "Hogar", "Salud", "Estudio"]
 DEFAULT_REMINDER_CATEGORIES = ["Seguros", "Documentos", "Suscripciones", "Servicios", "Turnos"]
+DEFAULT_INCOME_CATEGORIES = ["Sueldo", "Freelance", "Ventas", "Otros"]
+DEFAULT_EXPENSE_CATEGORIES = [
+    "Comida",
+    "Transporte",
+    "Vivienda",
+    "Servicios",
+    "Entretenimiento",
+    "Salud",
+    "Educación",
+    "Otros",
+]
+DEFAULT_SUBSCRIPTION_CATEGORIES = ["Streaming", "Software", "Gimnasio", "Internet", "Almacenamiento", "Otros"]
 
 
 class CategoryService:
@@ -41,3 +53,9 @@ def seed_default_categories(db: Session, user_id: uuid.UUID) -> None:
         db.add(Category(user_id=user_id, type=CategoryType.TASK, name=name))
     for name in DEFAULT_REMINDER_CATEGORIES:
         db.add(Category(user_id=user_id, type=CategoryType.REMINDER, name=name))
+    for name in DEFAULT_INCOME_CATEGORIES:
+        db.add(Category(user_id=user_id, type=CategoryType.INCOME, name=name))
+    for name in DEFAULT_EXPENSE_CATEGORIES:
+        db.add(Category(user_id=user_id, type=CategoryType.EXPENSE, name=name))
+    for name in DEFAULT_SUBSCRIPTION_CATEGORIES:
+        db.add(Category(user_id=user_id, type=CategoryType.SUBSCRIPTION, name=name))

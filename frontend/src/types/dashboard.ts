@@ -10,4 +10,12 @@ export interface DashboardSummary {
   }
   upcoming_reminders: Reminder[]
   week_tasks: Task[]
+  finance: {
+    currency: string
+    income_this_month: string
+    expenses_this_month: string
+    balance: string
+    top_expense_category: string | null
+    subscriptions_monthly_total: string
+  }
 }

@@ -4,13 +4,25 @@ import { Alert } from "@/components/ui/Alert"
 import { Button } from "@/components/ui/Button"
 import { Card } from "@/components/ui/Card"
 import { Input } from "@/components/ui/Input"
+import { Select } from "@/components/ui/Select"
 import { extractErrorMessage } from "@/services/api"
 import { authService } from "@/services/authService"
 import { settingsService } from "@/services/settingsService"
 import { useAuthStore } from "@/store/authStore"
 
+const CURRENCY_OPTIONS = [
+  { code: "USD", label: "USD — Dólar estadounidense" },
+  { code: "ARS", label: "ARS — Peso argentino" },
+  { code: "EUR", label: "EUR — Euro" },
+  { code: "MXN", label: "MXN — Peso mexicano" },
+  { code: "CLP", label: "CLP — Peso chileno" },
+  { code: "COP", label: "COP — Peso colombiano" },
+  { code: "BRL", label: "BRL — Real brasileño" },
+]
+
 const WIDGET_OPTIONS = [
   { key: "today", label: "Hoy", description: "Tareas pendientes, vencidas y recordatorios del día." },
+  { key: "finance_summary", label: "Finanzas", description: "Ingresos, gastos y saldo del mes." },
   { key: "upcoming_due", label: "Próximos vencimientos", description: "Los recordatorios más urgentes." },
   { key: "week_summary", label: "Resumen semanal", description: "Tareas programadas para los próximos días." },
 ]
@@ -25,6 +37,7 @@ export function SettingsPage() {
   const [success, setSuccess] = useState(false)
 
   const [widgets, setWidgets] = useState<string[]>([])
+  const [currency, setCurrency] = useState("USD")
   const [isLoadingWidgets, setIsLoadingWidgets] = useState(true)
   const [widgetsError, setWidgetsError] = useState<string | null>(null)
 
@@ -34,6 +47,7 @@ export function SettingsPage() {
       try {
         const settings = await settingsService.get()
         setWidgets(settings.dashboard_widgets)
+        setCurrency(settings.currency)
       } catch (err) {
         setWidgetsError(extractErrorMessage(err, "No pudimos cargar tu configuración del dashboard."))
       } finally {
@@ -42,6 +56,17 @@ export function SettingsPage() {
     }
     void loadSettings()
   }, [])
+
+  async function handleCurrencyChange(nextCurrency: string) {
+    const previous = currency
+    setCurrency(nextCurrency)
+    try {
+      await settingsService.update({ currency: nextCurrency })
+    } catch (err) {
+      setCurrency(previous)
+      setWidgetsError(extractErrorMessage(err, "No pudimos guardar la moneda."))
+    }
+  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -96,6 +121,27 @@ export function SettingsPage() {
             Guardar cambios
           </Button>
         </form>
+      </Card>
+
+      <Card className="p-6">
+        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Preferencias</h2>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          Moneda usada para mostrar tus ingresos, gastos y suscripciones.
+        </p>
+        <div className="mt-4 max-w-xs">
+          <Select
+            label="Moneda"
+            value={currency}
+            disabled={isLoadingWidgets}
+            onChange={(event) => void handleCurrencyChange(event.target.value)}
+          >
+            {CURRENCY_OPTIONS.map((option) => (
+              <option key={option.code} value={option.code}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
+        </div>
       </Card>
 
       <Card className="p-6">

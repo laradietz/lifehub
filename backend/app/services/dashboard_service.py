@@ -7,12 +7,18 @@ from sqlalchemy.orm import Session
 from app.models.enums import TaskStatus
 from app.models.reminder import Reminder
 from app.models.task import Task
-from app.schemas.dashboard import DashboardSummary, DashboardToday
+from app.schemas.dashboard import DashboardFinance, DashboardSummary, DashboardToday
+from app.services.finance_summary_service import FinanceSummaryService
+from app.services.settings_service import SettingsService
+from app.services.subscription_service import SubscriptionService
 
 
 class DashboardService:
     def __init__(self, db: Session):
         self.db = db
+        self.finance_summary_service = FinanceSummaryService(db)
+        self.subscription_service = SubscriptionService(db)
+        self.settings_service = SettingsService(db)
 
     def summary(self, user_id: uuid.UUID) -> DashboardSummary:
         now = datetime.now(timezone.utc)
@@ -70,6 +76,10 @@ class DashboardService:
             )
         )
 
+        currency = self.settings_service.get(user_id).currency
+        finance_summary = self.finance_summary_service.get_summary(user_id, currency)
+        subscription_summary = self.subscription_service.get_summary(user_id, currency)
+
         return DashboardSummary(
             today=DashboardToday(
                 tasks_due_today=tasks_due_today,
@@ -79,4 +89,14 @@ class DashboardService:
             ),
             upcoming_reminders=upcoming_reminders,
             week_tasks=week_tasks,
+            finance=DashboardFinance(
+                currency=currency,
+                income_this_month=finance_summary.total_income,
+                expenses_this_month=finance_summary.total_expense,
+                balance=finance_summary.balance,
+                top_expense_category=(
+                    finance_summary.top_expense_category.category_name if finance_summary.top_expense_category else None
+                ),
+                subscriptions_monthly_total=subscription_summary.monthly_total,
+            ),
         )

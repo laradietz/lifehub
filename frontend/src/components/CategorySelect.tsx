@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from "react"
+import { type KeyboardEvent, useState } from "react"
 
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
@@ -19,8 +19,12 @@ export function CategorySelect({ categories, value, onChange, onCreate }: Catego
   const [newName, setNewName] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  async function handleCreate(event: FormEvent) {
-    event.preventDefault()
+  // Nota: esto vive dentro del <form> de Tarea/Recordatorio/Finanzas/Suscripción.
+  // Un <form> anidado aca adentro es HTML invalido y el evento "submit" del
+  // formulario interno burbujea y dispara TAMBIEN el submit del formulario
+  // externo (creando la tarea/gasto a medias). Por eso esto usa un <div> +
+  // botones con onClick, nunca un <form> propio.
+  async function handleCreate() {
     if (!newName.trim()) return
     setIsSubmitting(true)
     try {
@@ -33,24 +37,26 @@ export function CategorySelect({ categories, value, onChange, onCreate }: Catego
     }
   }
 
+  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Enter") {
+      event.preventDefault()
+      void handleCreate()
+    }
+  }
+
   if (isCreating) {
     return (
-      <form onSubmit={handleCreate} className="flex flex-col gap-2">
-        <Input
-          label="Nueva categoría"
-          autoFocus
-          value={newName}
-          onChange={(event) => setNewName(event.target.value)}
-        />
+      <div className="flex flex-col gap-2">
+        <Input label="Nueva categoría" autoFocus value={newName} onChange={(event) => setNewName(event.target.value)} onKeyDown={handleKeyDown} />
         <div className="flex gap-2">
-          <Button type="submit" size="sm" isLoading={isSubmitting}>
+          <Button type="button" size="sm" isLoading={isSubmitting} onClick={() => void handleCreate()}>
             Crear
           </Button>
           <Button type="button" size="sm" variant="ghost" onClick={() => setIsCreating(false)}>
             Cancelar
           </Button>
         </div>
-      </form>
+      </div>
     )
   }
 
