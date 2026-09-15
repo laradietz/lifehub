@@ -1,6 +1,6 @@
 # HANDOFF — LifeHub (documento de continuidad)
 
-> Generado el 2026-09-15. Pegar este documento completo como primer mensaje en el chat nuevo. Cubre todo lo necesario para seguir el desarrollo sin releer la conversación anterior.
+> Generado el 2026-09-15, actualizado el 2026-09-15 tras completar la Fase 4. Pegar este documento completo como primer mensaje en el chat nuevo. Cubre todo lo necesario para seguir el desarrollo sin releer la conversación anterior.
 
 ---
 
@@ -18,19 +18,20 @@
 
 ## 2. Estado actual
 
-### ✅ Terminado y verificado (Fases 1-3)
+### ✅ Terminado y verificado (Fases 1-4)
 
 - **Fase 1** — Arquitectura, base de datos (esquema completo de 20 tablas), autenticación JWT completa.
 - **Fase 2** — Dashboard configurable, Tareas, Recordatorios/vencimientos.
 - **Fase 3** — Finanzas personales (ingresos/gastos) y Suscripciones.
+- **Fase 4** — Compras (listas personales/de hogar, sugerencias de recompra) y Hogar (households multi-usuario **reales**: invitación por email, aceptar/rechazar, roles dueño/miembro, expulsar/abandonar/eliminar, tareas asignables a miembros de un hogar). Ver sección 2.1 para el detalle completo de esta fase.
 - Cambio adicional (fuera del plan original, pedido por el usuario): recuperación de contraseña rediseñada de "link con token" a **código de 6 dígitos por email**.
+- **Bug crítico encontrado y arreglado durante la Fase 4** (no relacionado con la fase, pre-existente desde antes): el registro de usuarios nuevos devolvía **500** siempre. Causa: la migración `39c2e9c87f49` había agregado el valor `'reminder'` (minúscula) al enum de Postgres `category_type`, pero SQLAlchemy serializa los miembros de un `class X(str, enum.Enum)` usando su **`.name`** (`'REMINDER'`, mayúscula) al armar el `INSERT`, no su `.value`. Como `seed_default_categories()` crea categorías `REMINDER` al registrarse, el insert fallaba con `invalid input value for enum` y tumbaba todo el registro. Arreglado con la migración `a47597b1593c` (agrega el valor `'REMINDER'` correcto). **Importante:** todos los enums de Postgres de este proyecto usan los nombres de los miembros en MAYÚSCULA como valor real en la base (`'TASK'`, `'OWNER'`, `'PENDING'`, etc.), **no** el `.value` en minúscula del lado Python — tenerlo en cuenta en cualquier migración nueva que agregue un enum o un valor a uno existente (ver sección 7.4, actualizada).
 
-Todo lo anterior fue probado de punta a punta en navegador real (no solo tests automáticos) y tiene **45 tests de backend, todos pasando**.
+Todo lo anterior fue probado de punta a punta en navegador real (no solo tests automáticos, incluyendo un flujo completo de dos usuarios reales invitándose, compartiendo lista de compras y asignándose una tarea) y tiene **78 tests de backend, todos pasando** (45 de Fases 1-3 + 33 nuevos de Fase 4).
 
 ### 🚧 En desarrollo / no empezado
 
-- **Fase 4** — Compras (lista inteligente) y Hogar. **No empezada.** Los modelos de BD (`ShoppingList`, `ShoppingItem`, `ShoppingHistory`) ya existen en el esquema desde la Fase 1, pero no hay servicios, endpoints, ni frontend.
-- **Fase 5** — Documentos y Vehículos. No empezada. Modelos (`Document`, `Vehicle`, `VehicleMaintenance`) ya existen en el esquema, sin lógica ni UI.
+- **Fase 5** — Documentos y Vehículos. **Siguiente fase.** No empezada. Modelos (`Document`, `Vehicle`, `VehicleMaintenance`) ya existen en el esquema, sin lógica ni UI.
 - **Fase 6** — Calendario integrado. No empezada. Modelo `Event` existe en el esquema, sin lógica ni UI.
 - **Fase 7** — Asistente de IA. No empezada. Config tiene `OPENAI_API_KEY` como variable opcional preparada, nada más.
 - **Fase 8** — Notificaciones (in-app, email, push). No empezada. Modelo `Notification` existe en el esquema; `EmailService` existe como placeholder (ver sección 7) pero no hay disparo real de notificaciones ni lógica de "avisar N días antes" conectada a nada todavía (el campo `advance_notice_days` de `Reminder` se guarda pero no dispara nada).
@@ -44,9 +45,10 @@ Todo lo anterior fue probado de punta a punta en navegador real (no solo tests a
 2. **Frontend sin tests.** `vitest`, `@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event`, `jsdom` están instalados como devDependencies desde la Fase 1 pero **nunca se escribió ningún test de frontend**. Pendiente para la Fase 10.
 3. **Finanzas no hace conversión de moneda.** `FinanceSummaryService` (backend) suma montos de `Income`/`Expense` sin convertir divisas — asume que el usuario opera siempre en una sola moneda (razonable para una persona/hogar, pero está documentado como limitación intencional en el docstring del servicio, no un bug).
 4. **Recurrencia `CUSTOM` no genera la siguiente ocurrencia automáticamente.** Tareas y Recordatorios con `recurrence = "daily" | "weekly" | "monthly"` sí generan automáticamente la siguiente ocurrencia al completarse; `recurrence = "custom"` se guarda pero no dispara nada (ver `backend/app/services/recurrence.py`).
-5. **Docker Desktop está actualmente apagado** en esta máquina (el daemon no respondía al momento de escribir este handoff). Hay que arrancarlo antes de poder trabajar (ver sección 9).
-6. **El repo Git no tiene remoto configurado.** Es un repo local nuevo (`git init` hecho en la Fase 1), 4 commits en `master`, sin `origin`. No está publicado en GitHub todavía (eso es parte de la Fase 11 / sección 28 del pedido original).
-7. **Hay datos de prueba reales en la base de datos de desarrollo** (cuentas creadas manualmente durante las pruebas en navegador, ej. `lara.demo@example.com`). No es un seed formal (la Fase 25 del pedido original — "datos de demostración eliminables" — no está implementada), son solo restos de QA manual. No hay que tratarlos como fixtures ni depender de que existan.
+5. **Docker Desktop puede estar apagado al arrancar la sesión** (pasó tanto al iniciar la Fase 1 como al retomar para la Fase 4). Hay que arrancarlo antes de poder trabajar (ver sección 9) — no asumir que ya está corriendo.
+6. **El repo Git no tiene remoto configurado.** Es un repo local (`git init` hecho en la Fase 1), commits en `master`, sin `origin`. No está publicado en GitHub todavía (eso es parte de la Fase 11 / sección 28 del pedido original).
+7. **Hay datos de prueba reales en la base de datos de desarrollo** (cuentas creadas manualmente durante las pruebas en navegador, ej. `lara.demo@example.com`, y de la Fase 4 `browser-a@example.com`/`browser-b@example.com`/`bugcheck-temp@example.com`, todas con password `supersecret123`). No es un seed formal (la Fase 25 del pedido original — "datos de demostración eliminables" — no está implementada), son solo restos de QA manual. No hay que tratarlos como fixtures ni depender de que existan.
+8. **La asignación de una tarea a un miembro expulsado del hogar queda "huérfana".** Si a una tarea se le asigna `assigned_to_id` y después esa persona es expulsada del hogar (o abandona), `Task.assigned_to_id` **no se limpia automáticamente** — el backend simplemente deja de poder resolver ese usuario como miembro visible, y el frontend (`TaskItem.tsx`) deja de mostrar el badge "→ Nombre" porque ya no lo encuentra en `household.members`, pero el campo sigue apuntando a ese `user_id` en la base. No rompe nada (la tarea se sigue viendo y editando bien por los demás miembros), pero es un dato inconsistente que quedó sin resolver a propósito por alcance — si se quiere prolijo, limpiar `assigned_to_id` en `HouseholdService.remove_member`/`leave` para toda tarea de ese hogar asignada a esa persona.
 
 ---
 
@@ -193,10 +195,10 @@ GET    /api/categories?type=<CategoryType>
 POST   /api/categories
 DELETE /api/categories/{id}
 
-GET    /api/tasks?status=&priority=&category_id=&due_before=&due_after=
-POST   /api/tasks
-GET    /api/tasks/{id}
-PATCH  /api/tasks/{id}
+GET    /api/tasks?status=&priority=&category_id=&due_before=&due_after=&household_id=&assigned_to_me=
+POST   /api/tasks                            (household_id/assigned_to_id opcionales, ver sección 6)
+GET    /api/tasks/{id}                        # visible para el creador O cualquier miembro accepted del hogar
+PATCH  /api/tasks/{id}                        # idem visibilidad; borrado (DELETE) sigue restringido al creador
 DELETE /api/tasks/{id}
 
 GET    /api/reminders?include_completed=&category_id=
@@ -224,6 +226,28 @@ GET    /api/subscriptions/summary              # OJO: registrado ANTES de /{id} 
 GET    /api/subscriptions/{id}
 PATCH  /api/subscriptions/{id}
 DELETE /api/subscriptions/{id}
+
+GET    /api/households                                    # mis hogares (miembro accepted)
+POST   /api/households                                     (name)
+GET    /api/households/{id}                                # 404 si no soy accepted (incluye pending sin aceptar)
+PATCH  /api/households/{id}                                # solo dueño
+DELETE /api/households/{id}                                # solo dueño; SET NULL en tasks/shopping_lists
+POST   /api/households/{id}/members                        (email) # invitar, solo dueño
+DELETE /api/households/{id}/members/{member_id}             # expulsar/cancelar invitación, solo dueño
+POST   /api/households/{id}/leave                           # miembro accepted no-dueño
+GET    /api/households/invitations/pending                  # mis invitaciones pendientes, cualquier hogar
+POST   /api/households/invitations/{member_id}/accept
+POST   /api/households/invitations/{member_id}/decline      # borra la fila (permite re-invitar)
+
+GET    /api/shopping/lists                                  # propias + de hogares donde soy accepted
+POST   /api/shopping/lists                                   (name, household_id?)
+GET    /api/shopping/lists/{id}                               # con items[]
+PATCH  /api/shopping/lists/{id}                                # solo quien la creó (list.user_id)
+DELETE /api/shopping/lists/{id}                                 # idem
+POST   /api/shopping/lists/{id}/items                            (name, quantity?, unit?, notes?, category_id?)
+PATCH  /api/shopping/lists/{id}/items/{item_id}                   # is_purchased=true -> registra ShoppingHistory
+DELETE /api/shopping/lists/{id}/items/{item_id}
+GET    /api/shopping/suggestions                                  # heurística de recompra, siempre personal (no por hogar)
 ```
 
 Documentación interactiva (Swagger): `http://localhost:8000/api/docs` — se regenera sola desde el código, siempre confiar en esa antes que en este listado si hay dudas.
@@ -255,6 +279,10 @@ Ver sección 8 completa.
 11. **Sin over-engineering**: no se usó React Query/Redux/GraphQL, no hay capa de caché, fetch directo en `useEffect` + servicio axios, repetido conscientemente en cada página. El usuario pidió explícitamente "evitá sobreingeniería" y "priorizá mantenibilidad" — **mantener este nivel de simplicidad**, no introducir estas librerías salvo pedido explícito.
 12. **Idioma**: toda la UI y los mensajes de error del backend están en **español** (Argentina, "vos"). Mantener ese tono/idioma en todo lo nuevo.
 13. **Repo Git independiente** en `lifehub/`, separado del repo (probablemente accidental) que ya existía en la raíz de `Downloads`. **No mezclar con ese repo padre ni tocarlo.**
+14. **Hogares con multi-usuario real** (decisión explícita del usuario en la Fase 4, no un placeholder de un solo usuario). Diseño acordado: `HouseholdMember.status` (`pending`/`accepted`) modela la invitación — no hay un modelo `HouseholdInvitation` aparte. **Administrar el hogar (invitar, expulsar, renombrar, borrar) es exclusivo del dueño**; el uso cotidiano (crear tareas de hogar, asignarlas a cualquier miembro `accepted`, compartir listas de compras, agregar/marcar ítems) está abierto a cualquier miembro `accepted`, no solo al dueño. Rechazar una invitación **borra la fila** (no queda un estado `declined`) para poder re-invitar sin choque con el `UniqueConstraint`. El dueño no puede abandonar ni auto-expulsarse — su única salida es borrar el hogar completo. **No agregar un tercer rol ni un modelo de invitación separado sin que el usuario lo pida** — mantener esto simple fue una decisión consciente, no una limitación técnica.
+15. **Visibilidad de tareas de hogar**: una tarea con `household_id` es visible (lectura y edición/completado) para **cualquier miembro `accepted` del hogar**, no solo para quien la asignó o la persona asignada — es una lista de tareas compartida del hogar, no un buzón privado por persona. **Borrar sigue restringido a quien la creó** (`task.user_id`), para que nadie borre por accidente una tarea ajena del hogar. Ver `TaskRepository.get_visible` vs. `get_owned` en `backend/app/repositories/task_repository.py`.
+16. **Sugerencias de recompra siempre son personales, nunca por hogar** — `ShoppingHistory` no tiene `household_id` a propósito, aunque una lista de compras sí pueda ser de hogar. No inventarle al historial una noción de "consumo compartido" sin que el usuario lo pida explícitamente; mantiene el alcance chico (ver `backend/app/services/shopping_service.py::get_suggestions`, heurística simple de intervalo promedio entre compras, sin ML).
+17. **Convención de enums de Postgres: MAYÚSCULA, no minúscula.** SQLAlchemy serializa los miembros de un `class X(str, enum.Enum)` por su `.name` (`'OWNER'`, `'PENDING'`), no por su `.value` en minúscula — confirmado empíricamente en la Fase 4 tras encontrar el bug de `category_type`/`'reminder'` (ver sección 2). **Cualquier migración nueva que cree un enum o le agregue un valor debe usar el nombre del miembro en mayúscula**, nunca el `.value` de Python.
 
 ### Qué NO cambiar sin que el usuario lo pida
 - El esquema de tablas ya migrado (agregar columnas/tablas nuevas está bien vía Alembic; no renombrar/borrar lo existente).
@@ -262,6 +290,8 @@ Ver sección 8 completa.
 - El código de recuperación de contraseña por email (no volver a link con token).
 - La arquitectura por capas del backend.
 - La ausencia de librerías de estado/data-fetching pesadas en el frontend.
+- Que administrar un hogar (invitar/expulsar/renombrar/borrar) sea exclusivo del dueño.
+- La convención de enums de Postgres en MAYÚSCULA (punto 17 arriba).
 
 ---
 
@@ -372,25 +402,25 @@ Solo suma suscripciones con `is_active=True`. Redondeo con `ROUND_HALF_UP` a cen
 | `password_reset_tokens` | `models/auth_token.py` | ✅ Completo | user_id, token_hash, expires_at, used, **attempts** (int, límite 5) |
 | `user_settings` | `models/user_settings.py` | ✅ Completo | user_id (unique), language, currency, timezone, theme, enabled_modules (array), dashboard_widgets (array), notification_preferences (JSONB), ai_data_access_enabled |
 | `categories` | `models/category.py` | ✅ Completo | user_id (nullable = categoría de sistema, no usado actualmente), type (CategoryType), name, color, icon, is_system |
-| `households` | `models/household.py` | ⚠️ Modelo existe, sin servicio/endpoint/UI | name, owner_id |
-| `household_members` | `models/household.py` | ⚠️ Modelo existe, sin servicio/endpoint/UI | household_id, user_id, role (owner/member), unique(household_id, user_id) |
-| `tasks` | `models/task.py` | ✅ Completo | user_id, household_id (nullable), category_id, title, description, due_date (datetime), priority, status, recurrence, recurrence_rule, tags (array) |
+| `households` | `models/household.py` | ✅ Completo (Fase 4) | name, owner_id |
+| `household_members` | `models/household.py` | ✅ Completo (Fase 4) | household_id, user_id, role (owner/member), **status (pending/accepted, agregado en Fase 4)**, unique(household_id, user_id) |
+| `tasks` | `models/task.py` | ✅ Completo | user_id, household_id (nullable), **assigned_to_id (nullable, agregado a schema/service en Fase 4 — la columna ya estaba en la migración inicial)**, category_id, title, description, due_date (datetime), priority, status, recurrence, recurrence_rule, tags (array) |
 | `reminders` | `models/reminder.py` | ✅ Completo | user_id, category_id, name, description, due_date (**date**, no datetime), priority, recurrence, advance_notice_days (array int, default [30,7,1]), is_completed |
 | `events` | `models/event.py` | ⚠️ Modelo existe, sin servicio/endpoint/UI (Fase 6) | user_id, household_id, category_id, title, description, start_at, end_at, all_day, location |
 | `incomes` | `models/finance.py` | ✅ Completo | user_id, category_id, amount (Numeric 12,2), currency, date, description, payment_method |
 | `expenses` | `models/finance.py` | ✅ Completo | igual que incomes |
 | `subscriptions` | `models/subscription.py` | ✅ Completo | user_id, category_id, name, price, currency, frequency (weekly/monthly/yearly), next_billing_date, payment_method, is_active |
-| `shopping_lists` | `models/shopping.py` | ⚠️ Modelo existe, sin servicio/endpoint/UI (Fase 4) | user_id, household_id, name |
-| `shopping_items` | `models/shopping.py` | ⚠️ ídem | shopping_list_id, category_id, name, quantity, unit, notes, is_purchased, purchased_at |
-| `shopping_history` | `models/shopping.py` | ⚠️ ídem | user_id, item_name, purchased_at — pensada para calcular frecuencia de recompra |
+| `shopping_lists` | `models/shopping.py` | ✅ Completo (Fase 4) | user_id, household_id, name |
+| `shopping_items` | `models/shopping.py` | ✅ Completo (Fase 4) | shopping_list_id, category_id, name, quantity, unit, notes, is_purchased, purchased_at |
+| `shopping_history` | `models/shopping.py` | ✅ Completo (Fase 4) | user_id, item_name, purchased_at — usada por `ShoppingService.get_suggestions` para estimar frecuencia de recompra |
 | `documents` | `models/document.py` | ⚠️ Modelo existe, sin servicio/endpoint/UI (Fase 5) | user_id, name, category (DocumentCategory), expiry_date, notes, storage_key, file_name, file_size, mime_type |
 | `vehicles` | `models/vehicle.py` | ⚠️ ídem | user_id, brand, model, year, license_plate, mileage |
 | `vehicle_maintenance` | `models/vehicle.py` | ⚠️ ídem | vehicle_id, type, description, date, mileage_at_service, cost, next_due_date, next_due_mileage |
 | `notifications` | `models/notification.py` | ⚠️ Modelo existe, sin lógica de disparo (Fase 8) | user_id, type, channel, title, message, is_read, related_entity_type/id, scheduled_for, sent_at |
 
-**Enums nativos de Postgres** (todos en `backend/app/models/enums.py`): `TaskStatus`, `Priority`, `RecurrenceType`, `PaymentMethod`, `SubscriptionFrequency`, `NotificationChannel`, `NotificationType`, `HouseholdRole`, `CategoryType`, `DocumentCategory`, `VehicleMaintenanceType` — valores exactos en la sección de código ya listados arriba (sección de verificación previa a este documento).
+**Enums nativos de Postgres** (todos en `backend/app/models/enums.py`): `TaskStatus`, `Priority`, `RecurrenceType`, `PaymentMethod`, `SubscriptionFrequency`, `NotificationChannel`, `NotificationType`, `HouseholdRole`, `HouseholdMemberStatus` (nuevo en Fase 4: `PENDING`/`ACCEPTED`), `CategoryType`, `DocumentCategory`, `VehicleMaintenanceType`. **Importante (encontrado en la Fase 4, ver sección 2 "bug crítico"):** SQLAlchemy guarda estos enums usando el `.name` del miembro de Python en MAYÚSCULA (`'OWNER'`, `'PENDING'`, `'TASK'`...), no el `.value` en minúscula — confirmado corriendo `Enum(...).bind_processor(None)` y consultando los valores reales con `psql`. Cualquier migración nueva que cree un enum o le agregue un valor tiene que usar la forma MAYÚSCULA, igual que `567e2b7bfb30` ya hacía para el resto — el error real de este proyecto fue que `39c2e9c87f49` no siguió esa convención.
 
-**Migraciones aplicadas** (en orden): `567e2b7bfb30` (esquema inicial) → `7b71c7086eaa` (agrega `attempts` a `password_reset_tokens`) → `39c2e9c87f49` (agrega `'reminder'` al enum `category_type`, ALTER TYPE manual).
+**Migraciones aplicadas** (en orden): `567e2b7bfb30` (esquema inicial) → `7b71c7086eaa` (agrega `attempts` a `password_reset_tokens`) → `39c2e9c87f49` (agrega `'reminder'` minúscula al enum `category_type` — **valor incorrecto, no lo uses de referencia**) → `a47597b1593c` (Fase 4: agrega el valor correcto `'REMINDER'` mayúscula y migra filas existentes) → `1deb3fc6c345` (Fase 4: crea el enum `household_member_status` y la columna `status` en `household_members`, `server_default='ACCEPTED'`).
 
 **Datos iniciales:** no hay seed global. Lo único automático es `seed_default_categories()` al registrar un usuario nuevo (ver sección 6, punto 5).
 
@@ -492,17 +522,17 @@ docker compose exec frontend npx oxlint
 
 Orden sugerido (retomando el plan de fases original del usuario):
 
-1. **Fase 4 — Compras y Hogar** (siguiente fase, no empezada):
-   - Backend: `ShoppingListService`/`ShoppingItemService` (o un service combinado), endpoints `/api/shopping/lists`, `/api/shopping/lists/{id}/items`, marcar comprado, y lógica de **historial de compras** (`ShoppingHistory`) para estimar frecuencia de recompra ("Probablemente necesites comprar leche próximamente" — presentado como sugerencia, no afirmación, según el pedido original).
-   - Hogar: permitir asignar tareas a miembros — esto toca `households`/`household_members`, que hoy son modelos sin servicio. Definir si Hogar en la Fase 4 ya implica invitar usuarios reales (multi-usuario) o si por ahora es solo "tareas del hogar" de un único usuario con el modelo de households preparado pero no expuesto todavía. **[NO DEFINIDO — decidir con el usuario si hace falta.]**
-   - Frontend: `ShoppingListPage`, ítem con checkbox de comprado, historial visual, sugerencias de recompra.
-2. **Fase 5 — Documentos y Vehículos**: subida de archivos privados (definir almacenamiento: filesystem local en volumen Docker vs. S3-compatible — **[NO DEFINIDO]**, el modelo `Document` ya tiene `storage_key` genérico pensado para esto), vencimientos de documentos y de mantenimiento de vehículos integrados al dashboard de "próximos vencimientos" (hoy ese widget solo lee `Reminder`, habría que unificar o agregar estas fuentes).
-3. **Fase 6 — Calendario**: vista mensual/semanal/diaria que junte `Task.due_date`, `Reminder.due_date`, `Event`, pagos/suscripciones.
-4. **Fase 7 — IA**: capa de servicio separada (ya se dejó `OPENAI_API_KEY` preparado en config), que solo use datos que el usuario autorice explícitamente.
-5. **Fase 8 — Notificaciones**: conectar `advance_notice_days` de `Reminder` y `scheduled_for` de `Notification` a un disparador real (requiere definir: ¿cron/worker dentro del mismo contenedor, o un servicio aparte tipo Celery/APScheduler? **[NO DEFINIDO]**).
-6. **Fase 9 — UX/UI avanzado**: **activar el dark mode real** (ver problema pendiente #1) es la tarea más concreta y de mayor impacto visual aquí; también accesibilidad por teclado y auditoría responsive fina.
-7. **Fase 10 — Testing**: escribir tests de frontend (la infra ya está instalada, ver problema pendiente #2), ampliar cobertura de seguridad.
-8. **Fase 11 — Producción**: publicar el repo en GitHub (hoy no tiene remoto), README con screenshots, checklist de producción.
+1. **Fase 5 — Documentos y Vehículos** (siguiente fase, no empezada): subida de archivos privados (definir almacenamiento: filesystem local en volumen Docker vs. S3-compatible — **[NO DEFINIDO]**, el modelo `Document` ya tiene `storage_key` genérico pensado para esto), vencimientos de documentos y de mantenimiento de vehículos integrados al dashboard de "próximos vencimientos" (hoy ese widget solo lee `Reminder`, habría que unificar o agregar estas fuentes). Documentos y vehículos podrían asociarse a un `household_id` también (mismo patrón ya usado en Fase 4 para tareas/listas de compras) — confirmar con el usuario si aplica o si por ahora quedan estrictamente personales.
+2. **Fase 6 — Calendario**: vista mensual/semanal/diaria que junte `Task.due_date`, `Reminder.due_date`, `Event`, pagos/suscripciones.
+3. **Fase 7 — IA**: capa de servicio separada (ya se dejó `OPENAI_API_KEY` preparado en config), que solo use datos que el usuario autorice explícitamente.
+4. **Fase 8 — Notificaciones**: conectar `advance_notice_days` de `Reminder` y `scheduled_for` de `Notification` a un disparador real (requiere definir: ¿cron/worker dentro del mismo contenedor, o un servicio aparte tipo Celery/APScheduler? **[NO DEFINIDO]**). También sería el lugar natural para reemplazar el placeholder de `EmailService.send()` (usado hoy para las invitaciones de hogar de la Fase 4 y el código de recuperación de contraseña) por un proveedor real.
+5. **Fase 9 — UX/UI avanzado**: **activar el dark mode real** (ver problema pendiente #1) es la tarea más concreta y de mayor impacto visual aquí; también accesibilidad por teclado y auditoría responsive fina.
+6. **Fase 10 — Testing**: escribir tests de frontend (la infra ya está instalada, ver problema pendiente #2), ampliar cobertura de seguridad.
+7. **Fase 11 — Producción**: publicar el repo en GitHub (hoy no tiene remoto), README con screenshots, checklist de producción.
+
+### Pendiente menor arrastrado de la Fase 4 (no bloqueante)
+- Limpiar `Task.assigned_to_id` automáticamente cuando la persona asignada es expulsada del hogar o lo abandona (ver problema pendiente #8 en la sección 2).
+- Widget de "Compras" en el Dashboard/Settings (conteo de ítems pendientes) — se dejó fuera de la Fase 4 a propósito para no ampliar el alcance; requiere tocar `DashboardService`/schema de dashboard.
 
 ---
 
@@ -526,5 +556,5 @@ Orden sugerido (retomando el plan de fases original del usuario):
 
 1. Confirmar que Docker Desktop esté corriendo (`docker info`); si no, arrancarlo (sección 9) y esperar.
 2. `cd "C:\Users\Larita\Downloads\lifehub" && docker compose up -d`
-3. Verificar que todo sigue sano: `docker compose exec backend pytest -q` (debería dar **45 passed**) y abrir `http://localhost:5173` en el navegador para confirmar que carga el login.
-4. Empezar la **Fase 4 (Compras y Hogar)**: antes de escribir código, confirmar con el usuario el punto `[NO DEFINIDO]` de la sección 11 sobre el alcance de "Hogar" (¿multi-usuario real en esta fase, o solo tareas del hogar de un usuario por ahora?). Luego seguir el mismo patrón ya establecido: modelos ya existen → schemas → repository → service → endpoints → tests de backend → tipos/servicios/páginas de frontend → probar en navegador → commit.
+3. Verificar que todo sigue sano: `docker compose exec backend alembic upgrade head` (por si la máquina no tiene aplicadas las migraciones `a47597b1593c`/`1deb3fc6c345` de la Fase 4), `docker compose exec backend pytest -q` (debería dar **78 passed**) y abrir `http://localhost:5173` en el navegador para confirmar que carga el login.
+4. Empezar la **Fase 5 (Documentos y Vehículos)**: antes de escribir código, confirmar con el usuario los puntos `[NO DEFINIDO]` de la sección 11 (almacenamiento de archivos, si Documentos/Vehículos se asocian a un hogar). Luego seguir el mismo patrón ya establecido en las Fases 3-4: modelos ya existen → schemas → repository → service → endpoints → tests de backend → tipos/servicios/páginas de frontend → probar en navegador con datos reales → commit.
