@@ -13,6 +13,8 @@ class TaskBase(BaseModel):
     due_date: Optional[datetime] = None
     priority: Priority = Priority.MEDIUM
     category_id: Optional[uuid.UUID] = None
+    household_id: Optional[uuid.UUID] = None
+    assigned_to_id: Optional[uuid.UUID] = None
     recurrence: RecurrenceType = RecurrenceType.NONE
     recurrence_rule: Optional[str] = Field(default=None, max_length=255)
     tags: list[str] = Field(default_factory=list)
@@ -29,6 +31,8 @@ class TaskUpdate(BaseModel):
     priority: Optional[Priority] = None
     status: Optional[TaskStatus] = None
     category_id: Optional[uuid.UUID] = None
+    household_id: Optional[uuid.UUID] = None
+    assigned_to_id: Optional[uuid.UUID] = None
     recurrence: Optional[RecurrenceType] = None
     recurrence_rule: Optional[str] = Field(default=None, max_length=255)
     tags: Optional[list[str]] = None

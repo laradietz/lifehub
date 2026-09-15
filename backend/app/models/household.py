@@ -5,7 +5,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base
-from app.models.enums import HouseholdRole
+from app.models.enums import HouseholdMemberStatus, HouseholdRole
 from app.models.mixins import TimestampMixin, UUIDMixin
 
 
@@ -34,6 +34,11 @@ class HouseholdMember(UUIDMixin, TimestampMixin, Base):
     )
     role: Mapped[HouseholdRole] = mapped_column(
         Enum(HouseholdRole, name="household_role"), default=HouseholdRole.MEMBER, nullable=False
+    )
+    status: Mapped[HouseholdMemberStatus] = mapped_column(
+        Enum(HouseholdMemberStatus, name="household_member_status"),
+        default=HouseholdMemberStatus.PENDING,
+        nullable=False,
     )
 
     household: Mapped["Household"] = relationship(back_populates="members")

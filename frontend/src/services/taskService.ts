@@ -2,7 +2,7 @@ import { api } from "@/services/api"
 import type { Task, TaskPayload, TaskStatus } from "@/types/task"
 
 export const taskService = {
-  async list(params?: { status?: TaskStatus }): Promise<Task[]> {
+  async list(params?: { status?: TaskStatus; household_id?: string; assigned_to_me?: boolean }): Promise<Task[]> {
     const { data } = await api.get<Task[]>("/tasks", { params })
     return data
   },

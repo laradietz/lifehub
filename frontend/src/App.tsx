@@ -9,8 +9,11 @@ import { RegisterPage } from "@/pages/auth/RegisterPage"
 import { DashboardPage } from "@/pages/dashboard/DashboardPage"
 import { SettingsPage } from "@/pages/dashboard/SettingsPage"
 import { FinancePage } from "@/pages/finance/FinancePage"
+import { HouseholdDetailPage } from "@/pages/households/HouseholdDetailPage"
+import { HouseholdsPage } from "@/pages/households/HouseholdsPage"
 import { NotFoundPage } from "@/pages/NotFoundPage"
 import { RemindersPage } from "@/pages/reminders/RemindersPage"
+import { ShoppingPage } from "@/pages/shopping/ShoppingPage"
 import { SubscriptionsPage } from "@/pages/subscriptions/SubscriptionsPage"
 import { TasksPage } from "@/pages/tasks/TasksPage"
 import { ProtectedRoute } from "@/routes/ProtectedRoute"
@@ -39,6 +42,9 @@ export default function App() {
           <Route path="/reminders" element={<RemindersPage />} />
           <Route path="/finance" element={<FinancePage />} />
           <Route path="/subscriptions" element={<SubscriptionsPage />} />
+          <Route path="/households" element={<HouseholdsPage />} />
+          <Route path="/households/:id" element={<HouseholdDetailPage />} />
+          <Route path="/shopping" element={<ShoppingPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Route>

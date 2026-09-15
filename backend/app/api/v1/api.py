@@ -6,9 +6,11 @@ from app.api.v1.endpoints import (
     dashboard,
     expenses,
     finance,
+    households,
     incomes,
     reminders,
     settings,
+    shopping,
     subscriptions,
     tasks,
     users,
@@ -26,3 +28,5 @@ api_router.include_router(incomes.router, prefix="/incomes", tags=["finance"])
 api_router.include_router(expenses.router, prefix="/expenses", tags=["finance"])
 api_router.include_router(subscriptions.router, prefix="/subscriptions", tags=["finance"])
 api_router.include_router(finance.router, prefix="/finance", tags=["finance"])
+api_router.include_router(households.router, prefix="/households", tags=["households"])
+api_router.include_router(shopping.router, prefix="/shopping", tags=["shopping"])

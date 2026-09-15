@@ -11,6 +11,8 @@ const NAV_ITEMS = [
   { to: "/reminders", label: "Recordatorios", icon: "🔔" },
   { to: "/finance", label: "Finanzas", icon: "💰" },
   { to: "/subscriptions", label: "Suscripciones", icon: "🔁" },
+  { to: "/households", label: "Hogar", icon: "🏡" },
+  { to: "/shopping", label: "Compras", icon: "🛒" },
   { to: "/settings", label: "Configuración", icon: "⚙️" },
 ]
 

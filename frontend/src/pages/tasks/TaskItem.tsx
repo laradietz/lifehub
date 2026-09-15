@@ -1,19 +1,23 @@
 import { Badge } from "@/components/ui/Badge"
 import type { Category } from "@/types/category"
+import type { Household } from "@/types/household"
 import type { Task } from "@/types/task"
 import { formatDate, isOverdue, PRIORITY_LABEL, PRIORITY_TONE } from "@/utils/taskMeta"
 
 interface TaskItemProps {
   task: Task
   categories: Category[]
+  households: Household[]
   onToggleComplete: (task: Task) => void
   onSetInProgress: (task: Task) => void
   onEdit: (task: Task) => void
   onDelete: (task: Task) => void
 }
 
-export function TaskItem({ task, categories, onToggleComplete, onSetInProgress, onEdit, onDelete }: TaskItemProps) {
+export function TaskItem({ task, categories, households, onToggleComplete, onSetInProgress, onEdit, onDelete }: TaskItemProps) {
   const category = categories.find((item) => item.id === task.category_id)
+  const household = households.find((item) => item.id === task.household_id)
+  const assignee = household?.members.find((member) => member.user_id === task.assigned_to_id)
   const overdue = task.status !== "completed" && isOverdue(task.due_date)
   const completed = task.status === "completed"
 
@@ -43,6 +47,8 @@ export function TaskItem({ task, categories, onToggleComplete, onSetInProgress, 
           <Badge tone={PRIORITY_TONE[task.priority]}>{PRIORITY_LABEL[task.priority]}</Badge>
           {task.status === "in_progress" && <Badge tone="blue">En progreso</Badge>}
           {category && <Badge tone="slate">{category.name}</Badge>}
+          {household && <Badge tone="violet">{household.name}</Badge>}
+          {assignee && <Badge tone="slate">→ {assignee.full_name ?? assignee.email}</Badge>}
         </div>
         {task.description && (
           <p className="mt-0.5 line-clamp-2 text-sm text-slate-500 dark:text-slate-400">{task.description}</p>

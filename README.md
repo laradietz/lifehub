@@ -2,7 +2,7 @@
 
 Panel de control personal para organizar tareas, finanzas, compras, vencimientos, documentos, vehículos y más, todo en un solo lugar.
 
-> **Estado actual: Fase 3 completada.** Arquitectura, base de datos, autenticación (con recuperación de contraseña por código), dashboard configurable, tareas, recordatorios/vencimientos, finanzas personales y suscripciones funcionando de punta a punta. El resto de los módulos (compras, hogar, documentos, vehículos, calendario, IA, notificaciones) se construyen en las fases siguientes — ver [Roadmap](#roadmap).
+> **Estado actual: Fase 4 completada.** Arquitectura, base de datos, autenticación (con recuperación de contraseña por código), dashboard configurable, tareas, recordatorios/vencimientos, finanzas personales, suscripciones, compras inteligentes y hogares multi-usuario funcionando de punta a punta. El resto de los módulos (documentos, vehículos, calendario, IA, notificaciones) se construyen en las fases siguientes — ver [Roadmap](#roadmap).
 
 ## Why LifeHub?
 
@@ -10,7 +10,7 @@ Organizar la vida cotidiana hoy implica saltar entre una app de notas, el home b
 
 LifeHub existe para bajar esa carga mental: un único panel que responde preguntas simples como *"¿qué tengo que hacer hoy?"*, *"¿en qué gasté este mes?"* y *"¿qué está por vencer?"* — sin abrir cinco aplicaciones distintas.
 
-## Funcionalidades (Fases 1-3)
+## Funcionalidades (Fases 1-4)
 
 - Registro e inicio de sesión con JWT (access + refresh token).
 - Refresh tokens persistidos y revocables: el logout invalida la sesión de verdad, no solo del lado del cliente.
@@ -25,6 +25,9 @@ LifeHub existe para bajar esa carga mental: un único panel que responde pregunt
 - Categorías por usuario, con un set inicial sembrado al registrarse y creación rápida desde los formularios.
 - Sidebar de navegación, menú responsive para mobile, estados vacíos, de carga y de error en toda la app.
 - Esquema de base de datos completo para todos los módulos futuros (20 tablas), migrado con Alembic.
+- **Hogares multi-usuario reales**: crear un hogar, invitar a otras personas por email, aceptar/rechazar la invitación, roles dueño/miembro, expulsar o abandonar, eliminar el hogar (las tareas y listas compartidas quedan como personales, no se borran).
+- **Tareas de hogar**: asignar una tarea a cualquier miembro aceptado del hogar; la tarea es visible y editable por todo el hogar, pero solo quien la creó puede borrarla.
+- **Compras**: listas personales o compartidas con un hogar, ítems con cantidad/unidad/categoría, y **sugerencias de recompra** calculadas a partir del historial de compras propio (heurística simple por intervalo promedio entre compras, presentada siempre como sugerencia, nunca como certeza).
 
 ## Stack
 
@@ -137,7 +140,7 @@ docker compose exec backend pytest -v
 - [x] **Fase 1** — Arquitectura, base de datos y autenticación.
 - [x] **Fase 2** — Dashboard configurable, tareas, recordatorios y vencimientos.
 - [x] **Fase 3** — Finanzas personales y suscripciones.
-- [ ] **Fase 4** — Lista de compras inteligente y hogar.
+- [x] **Fase 4** — Lista de compras inteligente y hogar.
 - [ ] **Fase 5** — Documentos y vehículos.
 - [ ] **Fase 6** — Calendario integrado.
 - [ ] **Fase 7** — Asistente de IA.

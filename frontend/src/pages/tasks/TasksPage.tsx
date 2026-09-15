@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/Card"
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog"
 import { Skeleton } from "@/components/ui/Skeleton"
 import { useCategories } from "@/hooks/useCategories"
+import { useHouseholds } from "@/hooks/useHouseholds"
 import { extractErrorMessage } from "@/services/api"
 import { taskService } from "@/services/taskService"
 import { TaskFormModal } from "@/pages/tasks/TaskFormModal"
@@ -22,6 +23,7 @@ const FILTERS: { value: FilterValue; label: string }[] = [
 
 export function TasksPage() {
   const { categories } = useCategories("task")
+  const { households } = useHouseholds()
   const [tasks, setTasks] = useState<Task[]>([])
   const [filter, setFilter] = useState<FilterValue>("all")
   const [isLoading, setIsLoading] = useState(true)
@@ -145,6 +147,7 @@ export function TasksPage() {
                 key={task.id}
                 task={task}
                 categories={categories}
+                households={households}
                 onToggleComplete={handleToggleComplete}
                 onSetInProgress={handleSetInProgress}
                 onEdit={(item) => {

@@ -10,6 +10,8 @@ export interface Task {
   priority: Priority
   status: TaskStatus
   category_id: string | null
+  household_id: string | null
+  assigned_to_id: string | null
   recurrence: RecurrenceType
   recurrence_rule: string | null
   tags: string[]
@@ -34,6 +36,8 @@ export interface TaskPayload {
   priority?: Priority
   status?: TaskStatus
   category_id?: string | null
+  household_id?: string | null
+  assigned_to_id?: string | null
   recurrence?: RecurrenceType
   tags?: string[]
 }

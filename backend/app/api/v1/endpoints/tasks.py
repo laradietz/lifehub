@@ -22,6 +22,8 @@ def list_tasks(
     category_id: Optional[uuid.UUID] = None,
     due_before: Optional[datetime] = None,
     due_after: Optional[datetime] = None,
+    household_id: Optional[uuid.UUID] = None,
+    assigned_to_me: bool = Query(default=False),
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ) -> list[TaskRead]:
@@ -33,6 +35,8 @@ def list_tasks(
         category_id=category_id,
         due_before=due_before,
         due_after=due_after,
+        household_id=household_id,
+        assigned_to_me=assigned_to_me,
     )
 
 
@@ -49,7 +53,7 @@ def get_task(
     task_id: uuid.UUID, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)
 ) -> TaskRead:
     service = TaskService(db)
-    return service.get_owned_or_404(task_id, current_user.id)
+    return service.get_visible_or_404(task_id, current_user.id)
 
 
 @router.patch("/{task_id}", response_model=TaskRead)

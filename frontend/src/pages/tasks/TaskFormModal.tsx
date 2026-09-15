@@ -8,6 +8,7 @@ import { Modal } from "@/components/ui/Modal"
 import { Select } from "@/components/ui/Select"
 import { Textarea } from "@/components/ui/Textarea"
 import { useCategories } from "@/hooks/useCategories"
+import { useHouseholds } from "@/hooks/useHouseholds"
 import { extractErrorMessage } from "@/services/api"
 import type { Priority, RecurrenceType, Task, TaskPayload } from "@/types/task"
 import { fromDatetimeLocalValue, toDatetimeLocalValue } from "@/utils/datetime"
@@ -26,6 +27,8 @@ interface TaskFormState {
   due_date: string
   priority: Priority
   category_id: string
+  household_id: string
+  assigned_to_id: string
   recurrence: RecurrenceType
   tags: string
 }
@@ -36,12 +39,15 @@ const EMPTY_FORM: TaskFormState = {
   due_date: "",
   priority: "medium",
   category_id: "",
+  household_id: "",
+  assigned_to_id: "",
   recurrence: "none",
   tags: "",
 }
 
 export function TaskFormModal({ isOpen, onClose, onSubmit, task }: TaskFormModalProps) {
   const { categories, createCategory } = useCategories("task")
+  const { households } = useHouseholds()
   const [form, setForm] = useState(EMPTY_FORM)
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -55,6 +61,8 @@ export function TaskFormModal({ isOpen, onClose, onSubmit, task }: TaskFormModal
         due_date: toDatetimeLocalValue(task.due_date),
         priority: task.priority,
         category_id: task.category_id ?? "",
+        household_id: task.household_id ?? "",
+        assigned_to_id: task.assigned_to_id ?? "",
         recurrence: task.recurrence,
         tags: task.tags.join(", "),
       })
@@ -63,6 +71,13 @@ export function TaskFormModal({ isOpen, onClose, onSubmit, task }: TaskFormModal
     }
     setError(null)
   }, [isOpen, task])
+
+  const selectedHousehold = households.find((household) => household.id === form.household_id)
+  const assignableMembers = selectedHousehold?.members.filter((member) => member.status === "accepted") ?? []
+
+  function handleHouseholdChange(householdId: string) {
+    setForm((current) => ({ ...current, household_id: householdId, assigned_to_id: "" }))
+  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -75,6 +90,8 @@ export function TaskFormModal({ isOpen, onClose, onSubmit, task }: TaskFormModal
         due_date: fromDatetimeLocalValue(form.due_date),
         priority: form.priority,
         category_id: form.category_id || null,
+        household_id: form.household_id || null,
+        assigned_to_id: form.household_id ? form.assigned_to_id || null : null,
         recurrence: form.recurrence,
         tags: form.tags
           .split(",")
@@ -146,6 +163,36 @@ export function TaskFormModal({ isOpen, onClose, onSubmit, task }: TaskFormModal
             ))}
           </Select>
         </div>
+
+        {households.length > 0 && (
+          <div className="grid grid-cols-2 gap-4">
+            <Select
+              label="Hogar"
+              value={form.household_id}
+              onChange={(event) => handleHouseholdChange(event.target.value)}
+            >
+              <option value="">Personal (sin hogar)</option>
+              {households.map((household) => (
+                <option key={household.id} value={household.id}>
+                  {household.name}
+                </option>
+              ))}
+            </Select>
+            <Select
+              label="Asignar a"
+              value={form.assigned_to_id}
+              disabled={!form.household_id}
+              onChange={(event) => setForm((current) => ({ ...current, assigned_to_id: event.target.value }))}
+            >
+              <option value="">Sin asignar</option>
+              {assignableMembers.map((member) => (
+                <option key={member.user_id} value={member.user_id}>
+                  {member.full_name ?? member.email}
+                </option>
+              ))}
+            </Select>
+          </div>
+        )}
 
         <Input
           label="Etiquetas"

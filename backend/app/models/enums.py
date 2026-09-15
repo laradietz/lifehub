@@ -54,6 +54,11 @@ class HouseholdRole(str, enum.Enum):
     MEMBER = "member"
 
 
+class HouseholdMemberStatus(str, enum.Enum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+
+
 class CategoryType(str, enum.Enum):
     TASK = "task"
     REMINDER = "reminder"
