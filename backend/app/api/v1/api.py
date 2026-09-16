@@ -5,6 +5,7 @@ from app.api.v1.endpoints import (
     categories,
     dashboard,
     documents,
+    events,
     expenses,
     finance,
     households,
@@ -34,3 +35,4 @@ api_router.include_router(households.router, prefix="/households", tags=["househ
 api_router.include_router(shopping.router, prefix="/shopping", tags=["shopping"])
 api_router.include_router(documents.router, prefix="/documents", tags=["documents"])
 api_router.include_router(vehicles.router, prefix="/vehicles", tags=["vehicles"])
+api_router.include_router(events.router, prefix="/events", tags=["events"])

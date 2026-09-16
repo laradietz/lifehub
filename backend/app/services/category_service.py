@@ -23,6 +23,7 @@ DEFAULT_EXPENSE_CATEGORIES = [
     "Otros",
 ]
 DEFAULT_SUBSCRIPTION_CATEGORIES = ["Streaming", "Software", "Gimnasio", "Internet", "Almacenamiento", "Otros"]
+DEFAULT_EVENT_CATEGORIES = ["Personal", "Trabajo", "Salud", "Social", "Cumpleaños"]
 
 
 class CategoryService:
@@ -59,3 +60,5 @@ def seed_default_categories(db: Session, user_id: uuid.UUID) -> None:
         db.add(Category(user_id=user_id, type=CategoryType.EXPENSE, name=name))
     for name in DEFAULT_SUBSCRIPTION_CATEGORIES:
         db.add(Category(user_id=user_id, type=CategoryType.SUBSCRIPTION, name=name))
+    for name in DEFAULT_EVENT_CATEGORIES:
+        db.add(Category(user_id=user_id, type=CategoryType.EVENT, name=name))

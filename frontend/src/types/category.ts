@@ -8,6 +8,7 @@ export type CategoryType =
   | "vehicle"
   | "subscription"
   | "home"
+  | "event"
 
 export interface Category {
   id: string

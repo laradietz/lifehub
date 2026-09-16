@@ -69,6 +69,7 @@ class CategoryType(str, enum.Enum):
     VEHICLE = "vehicle"
     SUBSCRIPTION = "subscription"
     HOME = "home"
+    EVENT = "event"
 
 
 class DocumentCategory(str, enum.Enum):

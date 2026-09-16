@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { to: "/", label: "Hoy", icon: "🏠", end: true },
   { to: "/tasks", label: "Tareas", icon: "✅" },
   { to: "/reminders", label: "Recordatorios", icon: "🔔" },
+  { to: "/calendar", label: "Calendario", icon: "📅" },
   { to: "/finance", label: "Finanzas", icon: "💰" },
   { to: "/subscriptions", label: "Suscripciones", icon: "🔁" },
   { to: "/households", label: "Hogar", icon: "🏡" },

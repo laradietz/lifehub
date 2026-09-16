@@ -4,6 +4,7 @@ import { Navigate, Route, Routes } from "react-router-dom"
 import { AppLayout } from "@/layouts/AppLayout"
 import { AuthLayout } from "@/layouts/AuthLayout"
 import { ForgotPasswordPage } from "@/pages/auth/ForgotPasswordPage"
+import { CalendarPage } from "@/pages/calendar/CalendarPage"
 import { LoginPage } from "@/pages/auth/LoginPage"
 import { RegisterPage } from "@/pages/auth/RegisterPage"
 import { DashboardPage } from "@/pages/dashboard/DashboardPage"
@@ -42,6 +43,7 @@ export default function App() {
           <Route index element={<DashboardPage />} />
           <Route path="/tasks" element={<TasksPage />} />
           <Route path="/reminders" element={<RemindersPage />} />
+          <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/finance" element={<FinancePage />} />
           <Route path="/subscriptions" element={<SubscriptionsPage />} />
           <Route path="/households" element={<HouseholdsPage />} />
