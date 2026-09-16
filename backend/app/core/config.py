@@ -26,9 +26,6 @@ class Settings(BaseSettings):
 
     BACKEND_CORS_ORIGINS: list[str] = ["http://localhost:5173"]
 
-    # Fase 7 (IA): la API key se lee solo desde el entorno, nunca se persiste ni se loguea.
-    OPENAI_API_KEY: str | None = None
-
     MAX_UPLOAD_SIZE_MB: int = 10
 
     # Fase 8 (Notificaciones): worker en el mismo contenedor backend (APScheduler),

@@ -1,0 +1,77 @@
+# Compose de PRODUCCION, standalone (no se combina con docker-compose.yml via -f
+# para evitar el merge por concatenacion que hace Compose en listas como "ports" --
+# mas simple tener un archivo propio y explicito, aunque duplique db/minio).
+#
+# Diferencias clave respecto al de desarrollo:
+#   - backend: sin --reload, sin bind mount del codigo (usa lo que quedo compilado
+#     en la imagen), varios workers de uvicorn.
+#   - frontend: build multi-stage (Dockerfile.prod) que compila con `vite build` y
+#     sirve los estaticos con nginx, en vez de correr el dev server de Vite.
+#   - db/minio: NO exponen su puerto al host. Solo son alcanzables desde dentro de
+#     la red de Docker (por el backend), asi como corresponde en un despliegue real.
+#
+# Uso:
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Antes de usar esto contra internet de verdad, ver el checklist de produccion en
+# el README (SECRET_KEY propio, S3/email reales, CORS restringido, HTTPS, backups).
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-lifehub}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lifehub}
+      POSTGRES_DB: ${POSTGRES_DB:-lifehub}
+    volumes:
+      - lifehub_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lifehub}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: quay.io/minio/minio:RELEASE.2024-11-07T00-52-20Z
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-lifehub}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-lifehub12345}
+    volumes:
+      - lifehub_minio_data:/data
+    command: server /data --console-address ":9001"
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      ENVIRONMENT: production
+      POSTGRES_HOST: db
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    ports:
+      - "8000:8000"
+    command: >
+      sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000/api}
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  lifehub_pgdata:
+  lifehub_minio_data:

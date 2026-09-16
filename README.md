@@ -2,7 +2,7 @@
 
 Panel de control personal para organizar tareas, finanzas, compras, vencimientos, documentos, vehículos y más, todo en un solo lugar.
 
-> **Estado actual: Fase 9 completada.** Arquitectura, base de datos, autenticación (con recuperación de contraseña por código), dashboard configurable, tareas, recordatorios/vencimientos, finanzas personales, suscripciones, compras inteligentes, hogares multi-usuario, documentos/vehículos, calendario, notificaciones (in-app + email) y dark mode real funcionando de punta a punta. La Fase 7 (asistente de IA) se descartó a pedido del usuario. El resto de los módulos se construyen en las fases siguientes — ver [Roadmap](#roadmap).
+> **Estado actual: Fase 11 completada.** Arquitectura, base de datos, autenticación (con recuperación de contraseña por código), dashboard configurable, tareas, recordatorios/vencimientos, finanzas personales, suscripciones, compras inteligentes, hogares multi-usuario, documentos/vehículos, calendario, notificaciones (in-app + email), dark mode real, tests automatizados (backend + frontend) y empaquetado de producción funcionando de punta a punta. La Fase 7 (asistente de IA) se descartó a pedido del usuario. Ver [Roadmap](#roadmap).
 
 ## Why LifeHub?
 
@@ -10,7 +10,7 @@ Organizar la vida cotidiana hoy implica saltar entre una app de notas, el home b
 
 LifeHub existe para bajar esa carga mental: un único panel que responde preguntas simples como *"¿qué tengo que hacer hoy?"*, *"¿en qué gasté este mes?"* y *"¿qué está por vencer?"* — sin abrir cinco aplicaciones distintas.
 
-## Funcionalidades (Fases 1-6, 8-9)
+## Funcionalidades (Fases 1-6, 8-10)
 
 - Registro e inicio de sesión con JWT (access + refresh token).
 - Refresh tokens persistidos y revocables: el logout invalida la sesión de verdad, no solo del lado del cliente.
@@ -33,14 +33,15 @@ LifeHub existe para bajar esa carga mental: un único panel que responde pregunt
 - **Calendario**: vista mensual con eventos personales o de hogar (título, descripción, ubicación, categoría, todo el día o con horario). Igual que las tareas, un evento de hogar es visible y editable por cualquier miembro aceptado, pero solo quien lo creó puede borrarlo.
 - **Notificaciones**: campanita en el header con contador de no leídas, panel con el historial, marcar individual o todas como leídas. Un chequeo periódico en segundo plano (cada 15 minutos, corre dentro del propio contenedor del backend) avisa recordatorios próximos a vencer (según el aviso anticipado configurado por el usuario), documentos por vencer, mantenimientos de vehículos próximos y eventos del calendario cercanos, por canal in-app y por email (el envío de email sigue siendo un servicio placeholder, igual que en el resto de la app).
 - **Dark mode real**: tema claro, oscuro o según el sistema operativo, configurable desde Configuración con feedback instantáneo. Se sincroniza con el sistema en vivo cuando está en modo "Sistema" (sin recargar la página) y persiste entre sesiones. Los modales de toda la app tienen navegación de teclado accesible (foco atrapado dentro del modal, Escape cierra y devuelve el foco a quien lo abrió).
+- **Tests automatizados**: 115 tests de backend (pytest, con foco en IDOR — cada módulo verifica que un usuario no pueda ver/modificar datos de otro) y 53 tests de frontend (Vitest + Testing Library) cubriendo utilidades con lógica no trivial y componentes críticos (focus trap de los modales, el selector de categorías inline, el store de autenticación).
 
 ## Stack
 
 **Backend:** Python 3.12, FastAPI, SQLAlchemy 2.0, PostgreSQL 16, Pydantic v2, Alembic, JWT (PyJWT), bcrypt, boto3 (storage S3-compatible), APScheduler (chequeo periódico de notificaciones), pytest.
 
-**Frontend:** React 19, TypeScript, Vite, Tailwind CSS v4, React Router, Zustand, Axios.
+**Frontend:** React 19, TypeScript, Vite, Tailwind CSS v4, React Router, Zustand, Axios, Vitest + Testing Library.
 
-**Infraestructura:** Docker, Docker Compose, MinIO (almacenamiento de archivos S3-compatible en desarrollo).
+**Infraestructura:** Docker, Docker Compose, MinIO (almacenamiento de archivos S3-compatible en desarrollo), nginx (estáticos del frontend en producción).
 
 ## Arquitectura
 
@@ -68,7 +69,8 @@ lifehub/
 │       ├── services/       # Cliente Axios + interceptores de refresh
 │       ├── store/          # Estado global (Zustand)
 │       └── types/
-└── docker-compose.yml
+├── docker-compose.yml       # desarrollo
+└── docker-compose.prod.yml  # producción (build de nginx, sin bind mounts)
 ```
 
 La API sigue una arquitectura por capas: **endpoint → service → repository → modelo**. Los endpoints no acceden a la base de datos directamente; la lógica de negocio vive en `services/`, y el acceso a datos está aislado en `repositories/` para poder testear y reemplazar cada capa de forma independiente.
@@ -119,7 +121,40 @@ docker compose exec backend alembic upgrade head
 
 ```bash
 docker compose exec backend pytest -v
+docker compose exec frontend npx vitest run
 ```
+
+## Despliegue en producción
+
+El `docker-compose.yml` de la raíz es para **desarrollo**: monta el código como volumen, corre el backend con `--reload` y el frontend con el servidor de desarrollo de Vite. Para producción hay un archivo separado, `docker-compose.prod.yml`, que:
+
+- compila el frontend (`vite build`) y lo sirve con **nginx** en vez del dev server (`frontend/Dockerfile.prod` + `frontend/nginx.conf`, build multi-stage);
+- corre el backend sin `--reload`, sin montar el código como volumen (usa lo que quedó copiado en la imagen al buildear) y con varios workers de uvicorn;
+- no expone los puertos de PostgreSQL ni MinIO al host — solo son alcanzables desde dentro de la red de Docker.
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Por defecto el frontend queda en `http://localhost` (puerto 80) y el backend en `http://localhost:8000`. `VITE_API_URL` se necesita en build time (Vite embebe las variables `VITE_*` en el JS compilado, no se pueden cambiar en runtime sin recompilar la imagen):
+
+```bash
+VITE_API_URL=https://api.tu-dominio.com/api docker compose -f docker-compose.prod.yml up -d --build
+```
+
+### Checklist antes de exponer esto a internet de verdad
+
+Este proyecto nació como pieza de portfolio/uso personal, así que varias cosas quedaron con valores de desarrollo a propósito. Antes de un despliegue real:
+
+- [ ] Generar un `SECRET_KEY` propio y único (nunca reusar el de `.env.example` ni el de desarrollo).
+- [ ] Reemplazar `S3_ACCESS_KEY`/`S3_SECRET_KEY` (hoy apuntan a MinIO local con credenciales de ejemplo) por un storage S3 real con credenciales propias, o un MinIO productivo con contraseñas fuertes.
+- [ ] Conectar un proveedor de email real en `EmailService` (`backend/app/services/email_service.py`) — hoy solo loguea, usado tanto por recuperación de contraseña/invitaciones de hogar como por las notificaciones de la Fase 8.
+- [ ] Restringir `BACKEND_CORS_ORIGINS` al dominio real del frontend (nunca dejar `http://localhost:5173` en producción).
+- [ ] Servir todo detrás de HTTPS (un reverse proxy como Caddy, Traefik o nginx con Let's Encrypt delante de los puertos 80/8000 — este repo no incluye TLS, asume que se termina en la capa de infraestructura).
+- [ ] Definir una política de backups para los volúmenes `lifehub_pgdata` y `lifehub_minio_data` (hoy son volúmenes de Docker locales, sin backup automático).
+- [ ] Cambiar las credenciales de PostgreSQL (`POSTGRES_USER`/`POSTGRES_PASSWORD`) por unas que no sean las de ejemplo.
+- [ ] Revisar que no haya cuentas de prueba/datos de QA manual en la base antes de un lanzamiento real (este proyecto acumuló algunas durante el desarrollo — ver `HANDOFF.md`).
+- [ ] Considerar un límite de tasa (rate limiting) en `/api/auth/login` y `/api/auth/password-reset/*` — hoy no hay ninguno más allá del límite de intentos del código de recuperación.
 
 ## Variables de entorno
 
@@ -153,8 +188,8 @@ docker compose exec backend pytest -v
 - [ ] ~~**Fase 7** — Asistente de IA.~~ Descartada a pedido del usuario, no está en la cola.
 - [x] **Fase 8** — Notificaciones (in-app y email; push queda para más adelante).
 - [x] **Fase 9** — Pulido de UX/UI, accesibilidad y responsive avanzado (dark mode real, focus trap en modales, auditoría responsive en mobile).
-- [ ] **Fase 10** — Testing extendido, seguridad y optimización.
-- [ ] **Fase 11** — Empaquetado final para producción.
+- [x] **Fase 10** — Testing extendido y seguridad (tests de frontend con Vitest, cobertura de seguridad ampliada en el flujo de auth del backend).
+- [x] **Fase 11** — Empaquetado final para producción (`docker-compose.prod.yml`, build de frontend con nginx, checklist de producción) y publicación del repo en GitHub.
 
 ## Licencia
 
