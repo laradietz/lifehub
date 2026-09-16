@@ -1,6 +1,6 @@
 # HANDOFF — LifeHub (documento de continuidad)
 
-> Generado el 2026-09-15, actualizado el 2026-09-15 tras completar la Fase 5. Pegar este documento completo como primer mensaje en el chat nuevo. Cubre todo lo necesario para seguir el desarrollo sin releer la conversación anterior.
+> Generado el 2026-09-15, actualizado el 2026-09-16 tras completar la Fase 6. Pegar este documento completo como primer mensaje en el chat nuevo. Cubre todo lo necesario para seguir el desarrollo sin releer la conversación anterior.
 
 ---
 
@@ -18,13 +18,14 @@
 
 ## 2. Estado actual
 
-### ✅ Terminado y verificado (Fases 1-5)
+### ✅ Terminado y verificado (Fases 1-6)
 
 - **Fase 1** — Arquitectura, base de datos (esquema completo de 20 tablas), autenticación JWT completa.
 - **Fase 2** — Dashboard configurable, Tareas, Recordatorios/vencimientos.
 - **Fase 3** — Finanzas personales (ingresos/gastos) y Suscripciones.
 - **Fase 4** — Compras (listas personales/de hogar, sugerencias de recompra) y Hogar (households multi-usuario **reales**: invitación por email, aceptar/rechazar, roles dueño/miembro, expulsar/abandonar/eliminar, tareas asignables a miembros de un hogar). Ver sección 2.1 para el detalle completo de esta fase.
 - **Fase 5** — Documentos (CRUD + archivo adjunto real en storage S3-compatible/MinIO, con subida/descarga/reemplazo) y Vehículos (CRUD + historial de mantenimiento con actualización automática del odómetro). Decisiones de producto confirmadas con el usuario al arrancar la fase (ver también sección 6, puntos 18-19): (1) storage de archivos = MinIO/S3-compatible, no filesystem local; (2) Documentos y Vehículos son **estrictamente personales**, no se asocian a un hogar (a diferencia de tareas/compras en la Fase 4).
+- **Fase 6** — Calendario (vista mensual, grilla de 6 semanas). Decisión de producto confirmada con el usuario al arrancar la fase: `Event` admite `household_id` opcional, igual que Tareas/Compras (a diferencia de Documentos/Vehículos que son estrictamente personales). El modelo `Event` ya existía completo desde la Fase 1, así que la fase fue schemas/repository/service/endpoints + frontend, sin cambios de esquema salvo agregar `CategoryType.EVENT` (migración a mano, mismo patrón que la Fase 4). Mismo patrón de visibilidad que Tareas: un evento de hogar es visible/editable por cualquier miembro `accepted`, pero solo quien lo creó puede borrarlo. Probado de punta a punta en navegador real (crear evento personal con categoría y ubicación, editar, activar "todo el día" y verificar que el input cambia de `datetime-local` a `date`, crear un hogar y un evento asociado a él, navegar entre meses, volver a "Hoy", borrar con confirmación). 99 tests de backend, todos pasando (89 de Fases 1-5 + 10 nuevos de Fase 6).
 - Cambio adicional (fuera del plan original, pedido por el usuario): recuperación de contraseña rediseñada de "link con token" a **código de 6 dígitos por email**.
 - **Bug crítico encontrado y arreglado durante la Fase 4** (no relacionado con la fase, pre-existente desde antes): el registro de usuarios nuevos devolvía **500** siempre. Causa: la migración `39c2e9c87f49` había agregado el valor `'reminder'` (minúscula) al enum de Postgres `category_type`, pero SQLAlchemy serializa los miembros de un `class X(str, enum.Enum)` usando su **`.name`** (`'REMINDER'`, mayúscula) al armar el `INSERT`, no su `.value`. Como `seed_default_categories()` crea categorías `REMINDER` al registrarse, el insert fallaba con `invalid input value for enum` y tumbaba todo el registro. Arreglado con la migración `a47597b1593c` (agrega el valor `'REMINDER'` correcto). **Importante:** todos los enums de Postgres de este proyecto usan los nombres de los miembros en MAYÚSCULA como valor real en la base (`'TASK'`, `'OWNER'`, `'PENDING'`, etc.), **no** el `.value` en minúscula del lado Python — tenerlo en cuenta en cualquier migración nueva que agregue un enum o un valor a uno existente (ver sección 7.4, actualizada).
 
@@ -32,8 +33,7 @@ Todo lo anterior fue probado de punta a punta en navegador real (no solo tests a
 
 ### 🚧 En desarrollo / no empezado
 
-- **Fase 6** — Calendario integrado. **Siguiente fase.** No empezada. Modelo `Event` existe en el esquema, sin lógica ni UI.
-- **Fase 7** — Asistente de IA. No empezada. Config tiene `OPENAI_API_KEY` como variable opcional preparada, nada más.
+- **Fase 7** — Asistente de IA. **Siguiente fase.** No empezada. Config tiene `OPENAI_API_KEY` como variable opcional preparada, nada más.
 - **Fase 8** — Notificaciones (in-app, email, push). No empezada. Modelo `Notification` existe en el esquema; `EmailService` existe como placeholder (ver sección 7) pero no hay disparo real de notificaciones ni lógica de "avisar N días antes" conectada a nada todavía (el campo `advance_notice_days` de `Reminder` se guarda pero no dispara nada).
 - **Fase 9** — UX/UI avanzado, accesibilidad, responsive fino, **dark mode**. Parcialmente preparado pero no activado (ver "Problemas pendientes" abajo — es importante).
 - **Fase 10** — Testing extendido, seguridad, optimización. Backend tiene buena cobertura de auth/tasks/reminders/finance/subscriptions con foco en IDOR. **Frontend NO tiene tests** (ver abajo).
@@ -49,8 +49,9 @@ Todo lo anterior fue probado de punta a punta en navegador real (no solo tests a
 6. **El repo Git no tiene remoto configurado.** Es un repo local (`git init` hecho en la Fase 1), commits en `master`, sin `origin`. No está publicado en GitHub todavía (eso es parte de la Fase 11 / sección 28 del pedido original).
 7. **Hay datos de prueba reales en la base de datos de desarrollo** (cuentas creadas manualmente durante las pruebas en navegador, ej. `lara.demo@example.com` — ojo, esta cuenta puede no existir/tener otra contraseña en la máquina actual, ya falló un login de prueba en la Fase 5 —, y de la Fase 4 `browser-a@example.com`/`browser-b@example.com`/`bugcheck-temp@example.com`, y de la Fase 5 `fase5-test@example.com` con un vehículo Toyota Corolla y un documento "Póliza seguro auto" de prueba, todas con password `supersecret123`). No es un seed formal (la Fase 25 del pedido original — "datos de demostración eliminables" — no está implementada), son solo restos de QA manual. No hay que tratarlos como fixtures ni depender de que existan.
 8. **La asignación de una tarea a un miembro expulsado del hogar queda "huérfana".** Si a una tarea se le asigna `assigned_to_id` y después esa persona es expulsada del hogar (o abandona), `Task.assigned_to_id` **no se limpia automáticamente** — el backend simplemente deja de poder resolver ese usuario como miembro visible, y el frontend (`TaskItem.tsx`) deja de mostrar el badge "→ Nombre" porque ya no lo encuentra en `household.members`, pero el campo sigue apuntando a ese `user_id` en la base. No rompe nada (la tarea se sigue viendo y editando bien por los demás miembros), pero es un dato inconsistente que quedó sin resolver a propósito por alcance — si se quiere prolijo, limpiar `assigned_to_id` en `HouseholdService.remove_member`/`leave` para toda tarea de ese hogar asignada a esa persona.
-9. **Los vencimientos de Documentos y el mantenimiento de Vehículos NO están integrados al widget "Próximos vencimientos" del dashboard** (dejado fuera de la Fase 5 a propósito, mismo criterio que el widget de Compras en la Fase 4 — ver "Pendiente menor" en la sección 11). Hoy ese widget (`DashboardService.summary`) solo lee `Reminder`; documentos por vencer y mantenimientos con `next_due_date`/`next_due_mileage` próximos solo se ven entrando a `/documents` o `/vehicles`. Unificarlo requeriría cambiar `DashboardSummary.upcoming_reminders` (hoy tipado a `list[ReminderRead]`) por algo más genérico — no se hizo para no ampliar el alcance de la fase.
+9. **Los vencimientos de Documentos, el mantenimiento de Vehículos y los eventos del Calendario NO están integrados al widget "Próximos vencimientos" del dashboard** (dejado fuera de las Fases 4/5/6 a propósito, mismo criterio en las tres — ver "Pendiente menor" en la sección 11). Hoy ese widget (`DashboardService.summary`) solo lee `Reminder`; documentos por vencer, mantenimientos con `next_due_date`/`next_due_mileage` próximos y eventos del calendario solo se ven entrando a `/documents`, `/vehicles` o `/calendar`. Unificarlo requeriría cambiar `DashboardSummary.upcoming_reminders` (hoy tipado a `list[ReminderRead]`) por algo más genérico — no se hizo para no ampliar el alcance de cada fase.
 10. **El archivo de un Documento se sirve siempre a través del backend (proxy), nunca con una URL firmada directa a MinIO.** Fue una decisión explícita para evitar el problema de que una URL presignada generada con el endpoint interno de Docker (`http://minio:9000`) no es alcanzable desde el navegador del usuario (que corre fuera de la red de Docker, en `localhost`). Si en el futuro se quiere servir archivos grandes o video, considerar agregar un endpoint público de MinIO y URLs firmadas — hoy no hace falta porque `MAX_UPLOAD_SIZE_MB` (10MB por defecto) mantiene los archivos chicos.
+11. **El filtro de rango de fechas del Calendario (`start_after`/`start_before`) solo mira `Event.start_at`, no hace overlap contra `end_at`** (`EventRepository.list`, Fase 6). Simplificación intencional, mismo criterio de "sin over-engineering" del punto 11 de la sección 6: un evento multi-día cuyo `start_at` cae ANTES de la grilla del mes visible pero cuyo `end_at` cae DENTRO no aparece en esa vista de mes (sí aparece en el mes donde arrancó). No es un problema hoy porque el frontend no ofrece crear eventos de más de un día de forma prominente (el campo "Fin" existe pero es opcional y poco usado en la práctica). Si se necesita soportar bien eventos multi-día, cambiar la query a `start_at <= start_before AND (end_at IS NULL OR end_at >= start_after)`.
 
 ---
 
@@ -128,7 +129,8 @@ lifehub/
 │   │   ├── schemas/             # Pydantic: *Create, *Update, *Read por entidad
 │   │   ├── repositories/        # acceso a datos, un repo por entidad principal
 │   │   ├── services/            # lógica de negocio (capa que orquesta repos + reglas)
-│   │   │   └── storage_service.py  # Fase 5: cliente boto3 hacia MinIO/S3, get_storage_service() singleton
+│   │   │   ├── storage_service.py  # Fase 5: cliente boto3 hacia MinIO/S3, get_storage_service() singleton
+│   │   │   └── event_service.py    # Fase 6: mismo patron de visibilidad que task_service.py
 │   │   ├── api/
 │   │   │   ├── deps.py         # get_current_user, get_current_active_user (JWT)
 │   │   │   └── v1/
@@ -160,8 +162,9 @@ lifehub/
         │   ├── tasks/, reminders/, finance/, subscriptions/, shopping/, households/   # un módulo por dominio: Page + FormModal + Item
         │   ├── documents/               # DocumentsPage + DocumentFormModal + DocumentItem (Fase 5: upload/download/quitar archivo inline)
         │   ├── vehicles/                # VehiclesPage (tabs por vehículo, mismo patrón que ShoppingPage) + VehicleFormModal + MaintenanceFormModal + MaintenanceItem (Fase 5)
+        │   ├── calendar/                 # CalendarPage (grilla mensual, sin librería externa) + EventFormModal (Fase 6)
         │   └── NotFoundPage.tsx
-        └── utils/                     # cn, taskMeta (labels/formateo, reusado para vencimientos de documentos), datetime, currency, chartColors, financeMeta, documentMeta, vehicleMeta
+        └── utils/                     # cn, taskMeta (labels/formateo, reusado para vencimientos de documentos), datetime, currency, chartColors, financeMeta, documentMeta, vehicleMeta, calendar (Fase 6: grilla de mes, claves de fecha local)
 ```
 
 ### Relación entre capas (backend)
@@ -275,6 +278,12 @@ DELETE /api/vehicles/{id}                                       # cascada sobre 
 POST   /api/vehicles/{id}/maintenance                            (type, date, description?, mileage_at_service?, cost?, next_due_date?, next_due_mileage?)
 PATCH  /api/vehicles/{id}/maintenance/{maintenance_id}
 DELETE /api/vehicles/{id}/maintenance/{maintenance_id}
+
+GET    /api/events?start_after=&start_before=&category_id=&household_id=   # filtro de rango solo sobre start_at, ver seccion 2 punto 11
+POST   /api/events                                            (title, start_at, end_at?, all_day?, location?, category_id?, household_id?)
+GET    /api/events/{id}                                        # visible para el creador O cualquier miembro accepted del hogar
+PATCH  /api/events/{id}                                         # idem visibilidad; borrado sigue restringido al creador
+DELETE /api/events/{id}
 ```
 
 Documentación interactiva (Swagger): `http://localhost:8000/api/docs` — se regenera sola desde el código, siempre confiar en esa antes que en este listado si hay dudas.
@@ -312,6 +321,7 @@ Ver sección 8 completa.
 17. **Convención de enums de Postgres: MAYÚSCULA, no minúscula.** SQLAlchemy serializa los miembros de un `class X(str, enum.Enum)` por su `.name` (`'OWNER'`, `'PENDING'`), no por su `.value` en minúscula — confirmado empíricamente en la Fase 4 tras encontrar el bug de `category_type`/`'reminder'` (ver sección 2). **Cualquier migración nueva que cree un enum o le agregue un valor debe usar el nombre del miembro en mayúscula**, nunca el `.value` de Python.
 18. **Almacenamiento de archivos: bucket S3-compatible (MinIO en desarrollo), no filesystem local.** Decisión explícita del usuario al arrancar la Fase 5 (ver `AskUserQuestion` de esa sesión). `StorageService` (`backend/app/services/storage_service.py`) envuelve un cliente `boto3` apuntando a `S3_ENDPOINT_URL`. **El archivo nunca se sirve con una URL firmada directa al navegador** — el backend siempre actúa de proxy (`DocumentService.get_file_stream` + `StreamingResponse`), porque el endpoint interno de MinIO (`http://minio:9000`, red de Docker) no es alcanzable desde el navegador del usuario en `localhost`. **No introducir URLs presignadas sin resolver ese problema de red primero** (ver un endpoint público separado si hiciera falta en el futuro).
 19. **Documentos y Vehículos son estrictamente personales, sin `household_id`.** Decisión explícita del usuario al arrancar la Fase 5, a diferencia de Tareas/Compras (Fase 4) que sí admiten `household_id` opcional. Los modelos `Document`/`Vehicle`/`VehicleMaintenance` no tienen columna de hogar y **no se debe agregar** sin que el usuario lo pida explícitamente otra vez.
+20. **Eventos del Calendario SÍ admiten `household_id` opcional**, igual que Tareas/Compras (a diferencia del punto 19). Decisión explícita del usuario al arrancar la Fase 6. Mismo patrón de visibilidad que Tareas: visible/editable por cualquier miembro `accepted` del hogar, borrado restringido a quien lo creó (`EventService`/`EventRepository`, espejo de `TaskService`/`TaskRepository`).
 
 ### Qué NO cambiar sin que el usuario lo pida
 - El esquema de tablas ya migrado (agregar columnas/tablas nuevas está bien vía Alembic; no renombrar/borrar lo existente).
@@ -436,7 +446,7 @@ Solo suma suscripciones con `is_active=True`. Redondeo con `ROUND_HALF_UP` a cen
 | `household_members` | `models/household.py` | ✅ Completo (Fase 4) | household_id, user_id, role (owner/member), **status (pending/accepted, agregado en Fase 4)**, unique(household_id, user_id) |
 | `tasks` | `models/task.py` | ✅ Completo | user_id, household_id (nullable), **assigned_to_id (nullable, agregado a schema/service en Fase 4 — la columna ya estaba en la migración inicial)**, category_id, title, description, due_date (datetime), priority, status, recurrence, recurrence_rule, tags (array) |
 | `reminders` | `models/reminder.py` | ✅ Completo | user_id, category_id, name, description, due_date (**date**, no datetime), priority, recurrence, advance_notice_days (array int, default [30,7,1]), is_completed |
-| `events` | `models/event.py` | ⚠️ Modelo existe, sin servicio/endpoint/UI (Fase 6) | user_id, household_id, category_id, title, description, start_at, end_at, all_day, location |
+| `events` | `models/event.py` | ✅ Completo (Fase 6) | user_id, household_id (nullable, admite hogar a diferencia de documents/vehicles), category_id, title, description, start_at, end_at, all_day, location |
 | `incomes` | `models/finance.py` | ✅ Completo | user_id, category_id, amount (Numeric 12,2), currency, date, description, payment_method |
 | `expenses` | `models/finance.py` | ✅ Completo | igual que incomes |
 | `subscriptions` | `models/subscription.py` | ✅ Completo | user_id, category_id, name, price, currency, frequency (weekly/monthly/yearly), next_billing_date, payment_method, is_active |
@@ -450,7 +460,7 @@ Solo suma suscripciones con `is_active=True`. Redondeo con `ROUND_HALF_UP` a cen
 
 **Enums nativos de Postgres** (todos en `backend/app/models/enums.py`): `TaskStatus`, `Priority`, `RecurrenceType`, `PaymentMethod`, `SubscriptionFrequency`, `NotificationChannel`, `NotificationType`, `HouseholdRole`, `HouseholdMemberStatus` (nuevo en Fase 4: `PENDING`/`ACCEPTED`), `CategoryType`, `DocumentCategory`, `VehicleMaintenanceType`. **Importante (encontrado en la Fase 4, ver sección 2 "bug crítico"):** SQLAlchemy guarda estos enums usando el `.name` del miembro de Python en MAYÚSCULA (`'OWNER'`, `'PENDING'`, `'TASK'`...), no el `.value` en minúscula — confirmado corriendo `Enum(...).bind_processor(None)` y consultando los valores reales con `psql`. Cualquier migración nueva que cree un enum o le agregue un valor tiene que usar la forma MAYÚSCULA, igual que `567e2b7bfb30` ya hacía para el resto — el error real de este proyecto fue que `39c2e9c87f49` no siguió esa convención.
 
-**Migraciones aplicadas** (en orden): `567e2b7bfb30` (esquema inicial) → `7b71c7086eaa` (agrega `attempts` a `password_reset_tokens`) → `39c2e9c87f49` (agrega `'reminder'` minúscula al enum `category_type` — **valor incorrecto, no lo uses de referencia**) → `a47597b1593c` (Fase 4: agrega el valor correcto `'REMINDER'` mayúscula y migra filas existentes) → `1deb3fc6c345` (Fase 4: crea el enum `household_member_status` y la columna `status` en `household_members`, `server_default='ACCEPTED'`).
+**Migraciones aplicadas** (en orden): `567e2b7bfb30` (esquema inicial) → `7b71c7086eaa` (agrega `attempts` a `password_reset_tokens`) → `39c2e9c87f49` (agrega `'reminder'` minúscula al enum `category_type` — **valor incorrecto, no lo uses de referencia**) → `a47597b1593c` (Fase 4: agrega el valor correcto `'REMINDER'` mayúscula y migra filas existentes) → `1deb3fc6c345` (Fase 4: crea el enum `household_member_status` y la columna `status` en `household_members`, `server_default='ACCEPTED'`) → `c8f3a19d4b21` (Fase 6: agrega el valor `'EVENT'` al enum `category_type`).
 
 **Datos iniciales:** no hay seed global. Lo único automático es `seed_default_categories()` al registrar un usuario nuevo (ver sección 6, punto 5).
 
@@ -563,17 +573,17 @@ docker compose exec frontend npx oxlint
 
 Orden sugerido (retomando el plan de fases original del usuario):
 
-1. **Fase 6 — Calendario** (siguiente fase, no empezada): vista mensual/semanal/diaria que junte `Task.due_date`, `Reminder.due_date`, `Event`, pagos/suscripciones. El modelo `Event` ya existe en el esquema (`user_id`, `household_id`, `category_id`, `title`, `description`, `start_at`, `end_at`, `all_day`, `location`) sin lógica ni UI todavía. Definir con el usuario si `Event` se asocia a un hogar igual que tareas/compras (el modelo ya tiene la columna `household_id` lista) o si por consistencia con la Fase 5 se prefiere personal — no asumir, preguntar.
-2. **Fase 7 — IA**: capa de servicio separada (ya se dejó `OPENAI_API_KEY` preparado en config), que solo use datos que el usuario autorice explícitamente.
-3. **Fase 8 — Notificaciones**: conectar `advance_notice_days` de `Reminder` y `scheduled_for` de `Notification` a un disparador real (requiere definir: ¿cron/worker dentro del mismo contenedor, o un servicio aparte tipo Celery/APScheduler? **[NO DEFINIDO]**). También sería el lugar natural para reemplazar el placeholder de `EmailService.send()` (usado hoy para las invitaciones de hogar de la Fase 4 y el código de recuperación de contraseña) por un proveedor real, y para disparar avisos de vencimiento de Documentos/mantenimiento de Vehículos (Fase 5), no solo de `Reminder`.
-4. **Fase 9 — UX/UI avanzado**: **activar el dark mode real** (ver problema pendiente #1) es la tarea más concreta y de mayor impacto visual aquí; también accesibilidad por teclado y auditoría responsive fina.
-5. **Fase 10 — Testing**: escribir tests de frontend (la infra ya está instalada, ver problema pendiente #2), ampliar cobertura de seguridad.
-6. **Fase 11 — Producción**: publicar el repo en GitHub (hoy no tiene remoto), README con screenshots, checklist de producción. Para producción real también haría falta reemplazar las credenciales de desarrollo de MinIO (`S3_ACCESS_KEY`/`S3_SECRET_KEY` hardcodeadas como default en `config.py`) por un storage S3 real con credenciales propias.
+1. **Fase 7 — IA** (siguiente fase, no empezada): capa de servicio separada (ya se dejó `OPENAI_API_KEY` preparado en config), que solo use datos que el usuario autorice explícitamente.
+2. **Fase 8 — Notificaciones**: conectar `advance_notice_days` de `Reminder` y `scheduled_for` de `Notification` a un disparador real (requiere definir: ¿cron/worker dentro del mismo contenedor, o un servicio aparte tipo Celery/APScheduler? **[NO DEFINIDO]**). También sería el lugar natural para reemplazar el placeholder de `EmailService.send()` (usado hoy para las invitaciones de hogar de la Fase 4 y el código de recuperación de contraseña) por un proveedor real, y para disparar avisos de vencimiento de Documentos/mantenimiento de Vehículos (Fase 5) y de eventos del Calendario (Fase 6), no solo de `Reminder`.
+3. **Fase 9 — UX/UI avanzado**: **activar el dark mode real** (ver problema pendiente #1) es la tarea más concreta y de mayor impacto visual aquí; también accesibilidad por teclado y auditoría responsive fina.
+4. **Fase 10 — Testing**: escribir tests de frontend (la infra ya está instalada, ver problema pendiente #2), ampliar cobertura de seguridad.
+5. **Fase 11 — Producción**: publicar el repo en GitHub (hoy no tiene remoto), README con screenshots, checklist de producción. Para producción real también haría falta reemplazar las credenciales de desarrollo de MinIO (`S3_ACCESS_KEY`/`S3_SECRET_KEY` hardcodeadas como default en `config.py`) por un storage S3 real con credenciales propias.
 
 ### Pendiente menor arrastrado de fases anteriores (no bloqueante)
 - Limpiar `Task.assigned_to_id` automáticamente cuando la persona asignada es expulsada del hogar o lo abandona (ver problema pendiente #8 en la sección 2).
 - Widget de "Compras" en el Dashboard/Settings (conteo de ítems pendientes) — se dejó fuera de la Fase 4 a propósito para no ampliar el alcance; requiere tocar `DashboardService`/schema de dashboard.
-- Integrar vencimientos de Documentos y mantenimientos de Vehículos al widget "Próximos vencimientos" del dashboard — se dejó fuera de la Fase 5 a propósito, mismo criterio que el punto anterior (ver problema pendiente #9 en la sección 2).
+- Integrar vencimientos de Documentos, mantenimientos de Vehículos y eventos del Calendario al widget "Próximos vencimientos" del dashboard — se dejó fuera de las Fases 5/6 a propósito, mismo criterio que el punto anterior (ver problema pendiente #9 en la sección 2).
+- El filtro de rango de fechas del Calendario no hace overlap con `end_at` (ver problema pendiente #11 en la sección 2) — no bloqueante mientras los eventos multi-día no sean un caso de uso central.
 
 ---
 
@@ -595,7 +605,7 @@ Orden sugerido (retomando el plan de fases original del usuario):
 
 ## PRÓXIMA ACCIÓN
 
-1. Confirmar que Docker Desktop esté corriendo (`docker info`); si no, arrancarlo (sección 9) y esperar.
-2. `cd "C:\Users\Larita\Downloads\lifehub" && docker compose up -d` (esto también levanta el nuevo servicio `minio` de la Fase 5; si la imagen del backend no está actualizada con `boto3`, correr `docker compose up -d --build` en su lugar).
-3. Verificar que todo sigue sano: `docker compose exec backend alembic upgrade head` (la Fase 5 no agregó migraciones nuevas, pero no está de más), `docker compose exec backend pytest -q` (debería dar **89 passed**) y abrir `http://localhost:5173` en el navegador para confirmar que carga el login.
-4. Empezar la **Fase 6 (Calendario)**: antes de escribir código, confirmar con el usuario si `Event` se asocia a un hogar (el modelo ya tiene `household_id` listo) o si queda estrictamente personal como Documentos/Vehículos de la Fase 5. Luego seguir el mismo patrón ya establecido en las Fases 3-5: modelo ya existe → schemas → repository → service → endpoints → tests de backend → tipos/servicios/páginas de frontend → probar en navegador con datos reales → commit.
+1. Confirmar que Docker Desktop esté corriendo (`docker info`); si no, arrancarlo (sección 9) y esperar. **Nota de la Fase 6:** en esta máquina, Docker Desktop puede quedar "corriendo" según `tasklist` pero con la VM de WSL2 (`docker-desktop`) en estado `Stopped` (`wsl -l -v` lo muestra) durante varios minutos hasta que termina de levantar del todo — no asumir que está roto solo porque `docker info` tarda; si pasan más de ~15-20 minutos sin responder, ahí sí puede hacer falta reiniciar Docker Desktop a mano.
+2. `cd "C:\Users\Larita\Downloads\lifehub" && docker compose up -d` (si se tocó código del backend, correr `docker compose up -d --build` en su lugar).
+3. Verificar que todo sigue sano: `docker compose exec backend alembic upgrade head`, `docker compose exec backend pytest -q` (debería dar **99 passed**), `docker compose exec frontend npx tsc -b` y `docker compose exec frontend npx oxlint`, y abrir `http://localhost:5173` en el navegador para confirmar que carga el login.
+4. Empezar la **Fase 7 (Asistente de IA)**: capa de servicio separada que use `OPENAI_API_KEY` (ya preparado en config, sin usar todavía) y que solo acceda a datos que el usuario autorice explícitamente (hay un campo `UserSettings.ai_data_access_enabled` ya en el esquema, sin lógica que lo lea todavía). Antes de escribir código, confirmar con el usuario el alcance concreto (¿chat libre? ¿resúmenes del dashboard? ¿sugerencias sobre finanzas?) — no asumir.

@@ -2,7 +2,7 @@
 
 Panel de control personal para organizar tareas, finanzas, compras, vencimientos, documentos, vehículos y más, todo en un solo lugar.
 
-> **Estado actual: Fase 5 completada.** Arquitectura, base de datos, autenticación (con recuperación de contraseña por código), dashboard configurable, tareas, recordatorios/vencimientos, finanzas personales, suscripciones, compras inteligentes, hogares multi-usuario y documentos/vehículos funcionando de punta a punta. El resto de los módulos (calendario, IA, notificaciones) se construyen en las fases siguientes — ver [Roadmap](#roadmap).
+> **Estado actual: Fase 6 completada.** Arquitectura, base de datos, autenticación (con recuperación de contraseña por código), dashboard configurable, tareas, recordatorios/vencimientos, finanzas personales, suscripciones, compras inteligentes, hogares multi-usuario, documentos/vehículos y calendario funcionando de punta a punta. El resto de los módulos (IA, notificaciones) se construyen en las fases siguientes — ver [Roadmap](#roadmap).
 
 ## Why LifeHub?
 
@@ -10,7 +10,7 @@ Organizar la vida cotidiana hoy implica saltar entre una app de notas, el home b
 
 LifeHub existe para bajar esa carga mental: un único panel que responde preguntas simples como *"¿qué tengo que hacer hoy?"*, *"¿en qué gasté este mes?"* y *"¿qué está por vencer?"* — sin abrir cinco aplicaciones distintas.
 
-## Funcionalidades (Fases 1-5)
+## Funcionalidades (Fases 1-6)
 
 - Registro e inicio de sesión con JWT (access + refresh token).
 - Refresh tokens persistidos y revocables: el logout invalida la sesión de verdad, no solo del lado del cliente.
@@ -30,6 +30,7 @@ LifeHub existe para bajar esa carga mental: un único panel que responde pregunt
 - **Compras**: listas personales o compartidas con un hogar, ítems con cantidad/unidad/categoría, y **sugerencias de recompra** calculadas a partir del historial de compras propio (heurística simple por intervalo promedio entre compras, presentada siempre como sugerencia, nunca como certeza).
 - **Documentos**: DNI, pasaporte, seguros, garantías, contratos y facturas con categoría, vencimiento opcional y notas. Cada documento admite un archivo adjunto (subida, descarga y reemplazo) guardado en un bucket S3-compatible privado (MinIO en desarrollo) — el backend siempre hace de proxy al leerlo, nunca se expone una URL pública directa. Filtro por categoría y por "vencen en los próximos N días".
 - **Vehículos**: alta de vehículos (marca, modelo, año, patente, kilometraje) con historial de mantenimiento (cambios de aceite, service, neumáticos, etc.), costo, y próximo vencimiento por fecha o kilometraje. Registrar un mantenimiento con un kilometraje mayor al actual actualiza automáticamente el odómetro del vehículo. Documentos y vehículos son estrictamente personales (no se asocian a un hogar), a diferencia de tareas/compras.
+- **Calendario**: vista mensual con eventos personales o de hogar (título, descripción, ubicación, categoría, todo el día o con horario). Igual que las tareas, un evento de hogar es visible y editable por cualquier miembro aceptado, pero solo quien lo creó puede borrarlo.
 
 ## Stack
 
@@ -146,7 +147,7 @@ docker compose exec backend pytest -v
 - [x] **Fase 3** — Finanzas personales y suscripciones.
 - [x] **Fase 4** — Lista de compras inteligente y hogar.
 - [x] **Fase 5** — Documentos y vehículos.
-- [ ] **Fase 6** — Calendario integrado.
+- [x] **Fase 6** — Calendario integrado.
 - [ ] **Fase 7** — Asistente de IA.
 - [ ] **Fase 8** — Notificaciones (in-app, email, push).
 - [ ] **Fase 9** — Pulido de UX/UI, accesibilidad y responsive avanzado.
