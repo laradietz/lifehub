@@ -138,3 +138,79 @@ def test_password_reset_locks_after_too_many_wrong_attempts(client, db_session):
 def test_password_reset_request_does_not_leak_existing_email(client):
     response = client.post("/api/auth/password-reset/request", json={"email": "doesnotexist@example.com"})
     assert response.status_code == 202
+
+
+def test_password_reset_revokes_existing_sessions(client, db_session):
+    import hashlib
+
+    from app.models.auth_token import PasswordResetToken
+
+    client.post("/api/auth/register", json={"email": "revoke@example.com", "password": "supersecret123"})
+    login = client.post("/api/auth/login", data={"username": "revoke@example.com", "password": "supersecret123"})
+    old_refresh_token = login.json()["refresh_token"]
+
+    client.post("/api/auth/password-reset/request", json={"email": "revoke@example.com"})
+    stored = db_session.query(PasswordResetToken).first()
+    stored.token_hash = hashlib.sha256("123456".encode("utf-8")).hexdigest()
+    db_session.commit()
+
+    confirm = client.post(
+        "/api/auth/password-reset/confirm",
+        json={"email": "revoke@example.com", "code": "123456", "new_password": "brandnewpassword"},
+    )
+    assert confirm.status_code == 200
+
+    # La sesion abierta ANTES del reseteo no debe seguir siendo utilizable despues.
+    reused = client.post("/api/auth/refresh", json={"refresh_token": old_refresh_token})
+    assert reused.status_code == 401
+
+
+def test_access_token_rejected_at_refresh_endpoint(client):
+    client.post("/api/auth/register", json={"email": "typeconfusion@example.com", "password": "supersecret123"})
+    login = client.post(
+        "/api/auth/login", data={"username": "typeconfusion@example.com", "password": "supersecret123"}
+    )
+    access_token = login.json()["access_token"]
+
+    response = client.post("/api/auth/refresh", json={"refresh_token": access_token})
+    assert response.status_code == 401
+
+
+def test_refresh_token_rejected_as_bearer_token(client):
+    client.post("/api/auth/register", json={"email": "typeconfusion2@example.com", "password": "supersecret123"})
+    login = client.post(
+        "/api/auth/login", data={"username": "typeconfusion2@example.com", "password": "supersecret123"}
+    )
+    refresh_token = login.json()["refresh_token"]
+
+    response = client.get("/api/users/me", headers={"Authorization": f"Bearer {refresh_token}"})
+    assert response.status_code == 401
+
+
+def test_tampered_access_token_rejected(client):
+    client.post("/api/auth/register", json={"email": "tamper@example.com", "password": "supersecret123"})
+    login = client.post("/api/auth/login", data={"username": "tamper@example.com", "password": "supersecret123"})
+    access_token = login.json()["access_token"]
+
+    tampered = access_token[:-4] + ("A" if access_token[-4] != "A" else "B") + access_token[-3:]
+    response = client.get("/api/users/me", headers={"Authorization": f"Bearer {tampered}"})
+    assert response.status_code == 401
+
+
+def test_malformed_authorization_header_rejected(client):
+    response = client.get("/api/users/me", headers={"Authorization": "Bearer not-a-real-jwt"})
+    assert response.status_code == 401
+
+
+def test_expired_access_token_rejected(client, monkeypatch):
+    from datetime import timedelta
+
+    from app.core import security
+
+    monkeypatch.setattr(security, "timedelta", lambda **kwargs: timedelta(**{**kwargs, "minutes": -1}))
+    client.post("/api/auth/register", json={"email": "expired@example.com", "password": "supersecret123"})
+    login = client.post("/api/auth/login", data={"username": "expired@example.com", "password": "supersecret123"})
+    expired_access_token = login.json()["access_token"]
+
+    response = client.get("/api/users/me", headers={"Authorization": f"Bearer {expired_access_token}"})
+    assert response.status_code == 401
