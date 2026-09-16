@@ -2,7 +2,7 @@
 
 Panel de control personal para organizar tareas, finanzas, compras, vencimientos, documentos, vehículos y más, todo en un solo lugar.
 
-> **Estado actual: Fase 8 completada.** Arquitectura, base de datos, autenticación (con recuperación de contraseña por código), dashboard configurable, tareas, recordatorios/vencimientos, finanzas personales, suscripciones, compras inteligentes, hogares multi-usuario, documentos/vehículos, calendario y notificaciones (in-app + email) funcionando de punta a punta. La Fase 7 (asistente de IA) se descartó a pedido del usuario. El resto de los módulos se construyen en las fases siguientes — ver [Roadmap](#roadmap).
+> **Estado actual: Fase 9 completada.** Arquitectura, base de datos, autenticación (con recuperación de contraseña por código), dashboard configurable, tareas, recordatorios/vencimientos, finanzas personales, suscripciones, compras inteligentes, hogares multi-usuario, documentos/vehículos, calendario, notificaciones (in-app + email) y dark mode real funcionando de punta a punta. La Fase 7 (asistente de IA) se descartó a pedido del usuario. El resto de los módulos se construyen en las fases siguientes — ver [Roadmap](#roadmap).
 
 ## Why LifeHub?
 
@@ -10,7 +10,7 @@ Organizar la vida cotidiana hoy implica saltar entre una app de notas, el home b
 
 LifeHub existe para bajar esa carga mental: un único panel que responde preguntas simples como *"¿qué tengo que hacer hoy?"*, *"¿en qué gasté este mes?"* y *"¿qué está por vencer?"* — sin abrir cinco aplicaciones distintas.
 
-## Funcionalidades (Fases 1-6, 8)
+## Funcionalidades (Fases 1-6, 8-9)
 
 - Registro e inicio de sesión con JWT (access + refresh token).
 - Refresh tokens persistidos y revocables: el logout invalida la sesión de verdad, no solo del lado del cliente.
@@ -32,6 +32,7 @@ LifeHub existe para bajar esa carga mental: un único panel que responde pregunt
 - **Vehículos**: alta de vehículos (marca, modelo, año, patente, kilometraje) con historial de mantenimiento (cambios de aceite, service, neumáticos, etc.), costo, y próximo vencimiento por fecha o kilometraje. Registrar un mantenimiento con un kilometraje mayor al actual actualiza automáticamente el odómetro del vehículo. Documentos y vehículos son estrictamente personales (no se asocian a un hogar), a diferencia de tareas/compras.
 - **Calendario**: vista mensual con eventos personales o de hogar (título, descripción, ubicación, categoría, todo el día o con horario). Igual que las tareas, un evento de hogar es visible y editable por cualquier miembro aceptado, pero solo quien lo creó puede borrarlo.
 - **Notificaciones**: campanita en el header con contador de no leídas, panel con el historial, marcar individual o todas como leídas. Un chequeo periódico en segundo plano (cada 15 minutos, corre dentro del propio contenedor del backend) avisa recordatorios próximos a vencer (según el aviso anticipado configurado por el usuario), documentos por vencer, mantenimientos de vehículos próximos y eventos del calendario cercanos, por canal in-app y por email (el envío de email sigue siendo un servicio placeholder, igual que en el resto de la app).
+- **Dark mode real**: tema claro, oscuro o según el sistema operativo, configurable desde Configuración con feedback instantáneo. Se sincroniza con el sistema en vivo cuando está en modo "Sistema" (sin recargar la página) y persiste entre sesiones. Los modales de toda la app tienen navegación de teclado accesible (foco atrapado dentro del modal, Escape cierra y devuelve el foco a quien lo abrió).
 
 ## Stack
 
@@ -151,7 +152,7 @@ docker compose exec backend pytest -v
 - [x] **Fase 6** — Calendario integrado.
 - [ ] ~~**Fase 7** — Asistente de IA.~~ Descartada a pedido del usuario, no está en la cola.
 - [x] **Fase 8** — Notificaciones (in-app y email; push queda para más adelante).
-- [ ] **Fase 9** — Pulido de UX/UI, accesibilidad y responsive avanzado.
+- [x] **Fase 9** — Pulido de UX/UI, accesibilidad y responsive avanzado (dark mode real, focus trap en modales, auditoría responsive en mobile).
 - [ ] **Fase 10** — Testing extendido, seguridad y optimización.
 - [ ] **Fase 11** — Empaquetado final para producción.
 
