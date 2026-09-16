@@ -2,7 +2,7 @@
 
 Panel de control personal para organizar tareas, finanzas, compras, vencimientos, documentos, vehículos y más, todo en un solo lugar.
 
-> **Estado actual: Fase 6 completada.** Arquitectura, base de datos, autenticación (con recuperación de contraseña por código), dashboard configurable, tareas, recordatorios/vencimientos, finanzas personales, suscripciones, compras inteligentes, hogares multi-usuario, documentos/vehículos y calendario funcionando de punta a punta. El resto de los módulos (IA, notificaciones) se construyen en las fases siguientes — ver [Roadmap](#roadmap).
+> **Estado actual: Fase 8 completada.** Arquitectura, base de datos, autenticación (con recuperación de contraseña por código), dashboard configurable, tareas, recordatorios/vencimientos, finanzas personales, suscripciones, compras inteligentes, hogares multi-usuario, documentos/vehículos, calendario y notificaciones (in-app + email) funcionando de punta a punta. La Fase 7 (asistente de IA) se descartó a pedido del usuario. El resto de los módulos se construyen en las fases siguientes — ver [Roadmap](#roadmap).
 
 ## Why LifeHub?
 
@@ -10,7 +10,7 @@ Organizar la vida cotidiana hoy implica saltar entre una app de notas, el home b
 
 LifeHub existe para bajar esa carga mental: un único panel que responde preguntas simples como *"¿qué tengo que hacer hoy?"*, *"¿en qué gasté este mes?"* y *"¿qué está por vencer?"* — sin abrir cinco aplicaciones distintas.
 
-## Funcionalidades (Fases 1-6)
+## Funcionalidades (Fases 1-6, 8)
 
 - Registro e inicio de sesión con JWT (access + refresh token).
 - Refresh tokens persistidos y revocables: el logout invalida la sesión de verdad, no solo del lado del cliente.
@@ -31,10 +31,11 @@ LifeHub existe para bajar esa carga mental: un único panel que responde pregunt
 - **Documentos**: DNI, pasaporte, seguros, garantías, contratos y facturas con categoría, vencimiento opcional y notas. Cada documento admite un archivo adjunto (subida, descarga y reemplazo) guardado en un bucket S3-compatible privado (MinIO en desarrollo) — el backend siempre hace de proxy al leerlo, nunca se expone una URL pública directa. Filtro por categoría y por "vencen en los próximos N días".
 - **Vehículos**: alta de vehículos (marca, modelo, año, patente, kilometraje) con historial de mantenimiento (cambios de aceite, service, neumáticos, etc.), costo, y próximo vencimiento por fecha o kilometraje. Registrar un mantenimiento con un kilometraje mayor al actual actualiza automáticamente el odómetro del vehículo. Documentos y vehículos son estrictamente personales (no se asocian a un hogar), a diferencia de tareas/compras.
 - **Calendario**: vista mensual con eventos personales o de hogar (título, descripción, ubicación, categoría, todo el día o con horario). Igual que las tareas, un evento de hogar es visible y editable por cualquier miembro aceptado, pero solo quien lo creó puede borrarlo.
+- **Notificaciones**: campanita en el header con contador de no leídas, panel con el historial, marcar individual o todas como leídas. Un chequeo periódico en segundo plano (cada 15 minutos, corre dentro del propio contenedor del backend) avisa recordatorios próximos a vencer (según el aviso anticipado configurado por el usuario), documentos por vencer, mantenimientos de vehículos próximos y eventos del calendario cercanos, por canal in-app y por email (el envío de email sigue siendo un servicio placeholder, igual que en el resto de la app).
 
 ## Stack
 
-**Backend:** Python 3.12, FastAPI, SQLAlchemy 2.0, PostgreSQL 16, Pydantic v2, Alembic, JWT (PyJWT), bcrypt, boto3 (storage S3-compatible), pytest.
+**Backend:** Python 3.12, FastAPI, SQLAlchemy 2.0, PostgreSQL 16, Pydantic v2, Alembic, JWT (PyJWT), bcrypt, boto3 (storage S3-compatible), APScheduler (chequeo periódico de notificaciones), pytest.
 
 **Frontend:** React 19, TypeScript, Vite, Tailwind CSS v4, React Router, Zustand, Axios.
 
@@ -127,7 +128,7 @@ docker compose exec backend pytest -v
 | `ACCESS_TOKEN_EXPIRE_MINUTES` / `REFRESH_TOKEN_EXPIRE_DAYS` | Duración de los tokens. |
 | `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | Credenciales de la base de datos. |
 | `BACKEND_CORS_ORIGINS` | Lista JSON de orígenes permitidos por CORS. |
-| `OPENAI_API_KEY` | Se usa recién en la Fase 7 (asistente de IA). Opcional. |
+| `SCHEDULER_ENABLED` / `NOTIFICATION_CHECK_INTERVAL_MINUTES` | Notificaciones (Fase 8). Opcionales, valores por defecto `true` / `15`. |
 | `S3_ENDPOINT_URL` / `S3_ACCESS_KEY` / `S3_SECRET_KEY` / `S3_BUCKET_NAME` / `S3_REGION` | Almacenamiento de archivos (documentos adjuntos). MinIO en desarrollo, cualquier storage S3-compatible en producción. |
 | `VITE_API_URL` | URL base de la API que consume el frontend. |
 
@@ -148,8 +149,8 @@ docker compose exec backend pytest -v
 - [x] **Fase 4** — Lista de compras inteligente y hogar.
 - [x] **Fase 5** — Documentos y vehículos.
 - [x] **Fase 6** — Calendario integrado.
-- [ ] **Fase 7** — Asistente de IA.
-- [ ] **Fase 8** — Notificaciones (in-app, email, push).
+- [ ] ~~**Fase 7** — Asistente de IA.~~ Descartada a pedido del usuario, no está en la cola.
+- [x] **Fase 8** — Notificaciones (in-app y email; push queda para más adelante).
 - [ ] **Fase 9** — Pulido de UX/UI, accesibilidad y responsive avanzado.
 - [ ] **Fase 10** — Testing extendido, seguridad y optimización.
 - [ ] **Fase 11** — Empaquetado final para producción.
