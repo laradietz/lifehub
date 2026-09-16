@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react"
+import { CircleCheckBig, Plus } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
 
 import { Button } from "@/components/ui/Button"
 import { Card } from "@/components/ui/Card"
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog"
+import { SearchInput } from "@/components/ui/SearchInput"
 import { Skeleton } from "@/components/ui/Skeleton"
 import { useCategories } from "@/hooks/useCategories"
 import { useHouseholds } from "@/hooks/useHouseholds"
@@ -10,6 +12,7 @@ import { extractErrorMessage } from "@/services/api"
 import { taskService } from "@/services/taskService"
 import { TaskFormModal } from "@/pages/tasks/TaskFormModal"
 import { TaskItem } from "@/pages/tasks/TaskItem"
+import { toast } from "@/store/toastStore"
 import type { Task, TaskPayload, TaskStatus } from "@/types/task"
 
 type FilterValue = "all" | TaskStatus
@@ -26,6 +29,7 @@ export function TasksPage() {
   const { households } = useHouseholds()
   const [tasks, setTasks] = useState<Task[]>([])
   const [filter, setFilter] = useState<FilterValue>("all")
+  const [search, setSearch] = useState("")
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -55,8 +59,10 @@ export function TasksPage() {
   async function handleCreateOrUpdate(payload: TaskPayload) {
     if (editingTask) {
       await taskService.update(editingTask.id, payload)
+      toast.success("Tarea actualizada.")
     } else {
       await taskService.create(payload)
+      toast.success("Tarea creada.")
     }
     await loadTasks()
   }
@@ -66,8 +72,10 @@ export function TasksPage() {
     setTasks((current) => current.map((item) => (item.id === task.id ? { ...item, status: nextStatus } : item)))
     try {
       await taskService.update(task.id, { status: nextStatus })
+      if (nextStatus === "completed") toast.success("¡Tarea completada!")
       await loadTasks()
-    } catch {
+    } catch (err) {
+      toast.error(extractErrorMessage(err, "No pudimos actualizar la tarea."))
       await loadTasks()
     }
   }
@@ -83,11 +91,22 @@ export function TasksPage() {
     try {
       await taskService.remove(deletingTask.id)
       setDeletingTask(null)
+      toast.success("Tarea eliminada.")
       await loadTasks()
+    } catch (err) {
+      toast.error(extractErrorMessage(err, "No pudimos eliminar la tarea."))
     } finally {
       setIsDeleting(false)
     }
   }
+
+  const filteredTasks = useMemo(() => {
+    const query = search.trim().toLowerCase()
+    if (!query) return tasks
+    return tasks.filter(
+      (task) => task.title.toLowerCase().includes(query) || task.description?.toLowerCase().includes(query),
+    )
+  }, [tasks, search])
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
@@ -102,25 +121,29 @@ export function TasksPage() {
             setIsFormOpen(true)
           }}
         >
+          <Plus className="size-4" aria-hidden="true" />
           Nueva tarea
         </Button>
       </div>
 
-      <div className="flex gap-1 overflow-x-auto rounded-lg bg-slate-100 p-1 dark:bg-slate-900">
-        {FILTERS.map((item) => (
-          <button
-            key={item.value}
-            type="button"
-            onClick={() => setFilter(item.value)}
-            className={`focus-ring shrink-0 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-              filter === item.value
-                ? "bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-slate-100"
-                : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-            }`}
-          >
-            {item.label}
-          </button>
-        ))}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex gap-1 overflow-x-auto rounded-lg bg-slate-100 p-1 dark:bg-slate-900">
+          {FILTERS.map((item) => (
+            <button
+              key={item.value}
+              type="button"
+              onClick={() => setFilter(item.value)}
+              className={`focus-ring shrink-0 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                filter === item.value
+                  ? "bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-slate-100"
+                  : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+        <SearchInput value={search} onChange={setSearch} placeholder="Buscar tareas..." className="sm:w-64" />
       </div>
 
       <Card className="px-5 py-2">
@@ -134,15 +157,23 @@ export function TasksPage() {
           <p className="py-8 text-center text-sm text-red-600 dark:text-red-400">{error}</p>
         ) : tasks.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-14 text-center">
-            <span className="text-2xl">✅</span>
+            <span className="flex size-12 items-center justify-center rounded-full bg-brand-50 text-brand-500 dark:bg-brand-950/60 dark:text-brand-300">
+              <CircleCheckBig className="size-6" aria-hidden="true" />
+            </span>
             <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
               {filter === "all" ? "No tenés tareas todavía" : "No hay tareas en esta categoría"}
             </p>
             <p className="text-sm text-slate-500 dark:text-slate-400">Creá tu primera tarea para empezar a organizarte.</p>
           </div>
+        ) : filteredTasks.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 py-14 text-center">
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+              Ninguna tarea coincide con "{search}"
+            </p>
+          </div>
         ) : (
           <ul>
-            {tasks.map((task) => (
+            {filteredTasks.map((task) => (
               <TaskItem
                 key={task.id}
                 task={task}

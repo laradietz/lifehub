@@ -35,13 +35,14 @@ Vida En Orden existe para bajar esa carga mental: un único panel que responde p
 - **Calendario**: vista mensual con eventos personales o de hogar (título, descripción, ubicación, categoría, todo el día o con horario). Igual que las tareas, un evento de hogar es visible y editable por cualquier miembro aceptado, pero solo quien lo creó puede borrarlo.
 - **Notificaciones**: campanita en el header con contador de no leídas, panel con el historial, marcar individual o todas como leídas. Un chequeo periódico en segundo plano (cada 15 minutos, corre dentro del propio contenedor del backend) avisa recordatorios próximos a vencer (según el aviso anticipado configurado por el usuario), documentos por vencer, mantenimientos de vehículos próximos y eventos del calendario cercanos, por canal in-app y por email (el envío de email sigue siendo un servicio placeholder, igual que en el resto de la app).
 - **Dark mode real**: tema claro, oscuro o según el sistema operativo, configurable desde Configuración con feedback instantáneo. Se sincroniza con el sistema en vivo cuando está en modo "Sistema" (sin recargar la página) y persiste entre sesiones. Los modales de toda la app tienen navegación de teclado accesible (foco atrapado dentro del modal, Escape cierra y devuelve el foco a quien lo abrió).
-- **Tests automatizados**: 115 tests de backend (pytest, con foco en IDOR — cada módulo verifica que un usuario no pueda ver/modificar datos de otro) y 53 tests de frontend (Vitest + Testing Library) cubriendo utilidades con lógica no trivial y componentes críticos (focus trap de los modales, el selector de categorías inline, el store de autenticación).
+- **Tests automatizados**: 115 tests de backend (pytest, con foco en IDOR — cada módulo verifica que un usuario no pueda ver/modificar datos de otro) y 72 tests de frontend (Vitest + Testing Library) cubriendo utilidades con lógica no trivial, componentes críticos (focus trap de los modales, el selector de categorías inline, el store de autenticación, el sistema de toasts) y una auditoría automática de accesibilidad con `jest-axe` sobre los componentes base.
+- **UI pulida**: íconos coherentes en toda la app (lucide-react, sin emoji sueltos), notificaciones toast al crear/editar/eliminar, búsqueda y orden en las listas más largas, microinteracciones sutiles (hover, active, animaciones de entrada en modales y toasts) respetando `prefers-reduced-motion`.
 
 ## Stack
 
 **Backend:** Python 3.12, FastAPI, SQLAlchemy 2.0, PostgreSQL 16, Pydantic v2, Alembic, JWT (PyJWT), bcrypt, boto3 (storage S3-compatible), APScheduler (chequeo periódico de notificaciones), pytest.
 
-**Frontend:** React 19, TypeScript, Vite, Tailwind CSS v4, React Router, Zustand, Axios, Vitest + Testing Library.
+**Frontend:** React 19, TypeScript, Vite, Tailwind CSS v4, React Router, Zustand, Axios, Vitest + Testing Library, lucide-react (íconos).
 
 **Infraestructura:** Docker, Docker Compose, MinIO (almacenamiento de archivos S3-compatible en desarrollo), nginx (estáticos del frontend en producción).
 

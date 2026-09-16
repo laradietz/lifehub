@@ -13,7 +13,7 @@ export function MemberRow({ member, currentUserId, canRemove, onRemove }: Member
   const isSelf = member.user_id === currentUserId
 
   return (
-    <li className="flex items-center justify-between gap-3 border-b border-slate-100 py-3 last:border-0 dark:border-slate-800">
+    <li className="flex items-center justify-between gap-3 rounded-lg border-b border-slate-100 px-2 py-3 transition-colors last:border-0 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/60">
       <div className="flex min-w-0 items-center gap-3">
         <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-sm font-semibold text-brand-700 dark:bg-brand-900 dark:text-brand-200">
           {(member.full_name ?? member.email).charAt(0).toUpperCase()}

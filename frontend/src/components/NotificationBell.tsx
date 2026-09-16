@@ -1,17 +1,18 @@
+import { Bell, Calendar, CircleCheckBig, FileText, Info, Repeat, Car as VehicleIcon } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 
 import { notificationService } from "@/services/notificationService"
 import type { Notification, NotificationType } from "@/types/notification"
 import { cn } from "@/utils/cn"
 
-const TYPE_ICON: Record<NotificationType, string> = {
-  reminder: "🔔",
-  document: "📄",
-  vehicle: "🚗",
-  event: "📅",
-  task: "✅",
-  subscription: "🔁",
-  system: "ℹ️",
+const TYPE_ICON: Record<NotificationType, typeof Bell> = {
+  reminder: Bell,
+  document: FileText,
+  vehicle: VehicleIcon,
+  event: Calendar,
+  task: CircleCheckBig,
+  subscription: Repeat,
+  system: Info,
 }
 
 function formatWhen(iso: string): string {
@@ -94,9 +95,9 @@ export function NotificationBell() {
         aria-label="Notificaciones"
         aria-expanded={isOpen}
         onClick={() => (isOpen ? setIsOpen(false) : void openPanel())}
-        className="focus-ring relative flex size-9 items-center justify-center rounded-full text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+        className="focus-ring relative flex size-9 items-center justify-center rounded-full text-slate-600 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
       >
-        <span aria-hidden="true">🔔</span>
+        <Bell className="size-[18px]" aria-hidden="true" />
         {unreadCount > 0 && (
           <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white">
             {unreadCount > 9 ? "9+" : unreadCount}
@@ -107,7 +108,7 @@ export function NotificationBell() {
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} aria-hidden="true" />
-          <div className="absolute right-0 z-50 mt-2 flex max-h-96 w-80 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900">
+          <div className="animate-modal-in absolute right-0 z-50 mt-2 flex max-h-96 w-80 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900">
             <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2.5 dark:border-slate-800">
               <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">Notificaciones</span>
               {hasUnreadInPanel && (
@@ -130,30 +131,33 @@ export function NotificationBell() {
                 </p>
               ) : (
                 <ul className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {notifications.map((notification) => (
-                    <li key={notification.id}>
-                      <button
-                        type="button"
-                        onClick={() => void handleMarkRead(notification)}
-                        className={cn(
-                          "focus-ring flex w-full flex-col gap-0.5 px-4 py-2.5 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-800",
-                          !notification.is_read && "bg-brand-50/60 dark:bg-brand-950/20",
-                        )}
-                      >
-                        <span className="flex items-center justify-between gap-2">
-                          <span className="flex items-center gap-1.5 font-medium text-slate-800 dark:text-slate-100">
-                            <span aria-hidden="true">{TYPE_ICON[notification.type] ?? "🔔"}</span>
-                            {notification.title}
+                  {notifications.map((notification) => {
+                    const Icon = TYPE_ICON[notification.type] ?? Bell
+                    return (
+                      <li key={notification.id}>
+                        <button
+                          type="button"
+                          onClick={() => void handleMarkRead(notification)}
+                          className={cn(
+                            "focus-ring flex w-full flex-col gap-0.5 px-4 py-2.5 text-left text-sm transition-colors hover:bg-slate-50 dark:hover:bg-slate-800",
+                            !notification.is_read && "bg-brand-50/60 dark:bg-brand-950/20",
+                          )}
+                        >
+                          <span className="flex items-center justify-between gap-2">
+                            <span className="flex items-center gap-1.5 font-medium text-slate-800 dark:text-slate-100">
+                              <Icon className="size-3.5 shrink-0 text-slate-400 dark:text-slate-500" aria-hidden="true" />
+                              {notification.title}
+                            </span>
+                            {!notification.is_read && <span className="size-2 shrink-0 rounded-full bg-brand-500" />}
                           </span>
-                          {!notification.is_read && <span className="size-2 shrink-0 rounded-full bg-brand-500" />}
-                        </span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400">{notification.message}</span>
-                        <span className="text-[11px] text-slate-400 dark:text-slate-500">
-                          {formatWhen(notification.created_at)}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
+                          <span className="text-xs text-slate-500 dark:text-slate-400">{notification.message}</span>
+                          <span className="text-[11px] text-slate-400 dark:text-slate-500">
+                            {formatWhen(notification.created_at)}
+                          </span>
+                        </button>
+                      </li>
+                    )
+                  })}
                 </ul>
               )}
             </div>

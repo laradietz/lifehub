@@ -1,3 +1,19 @@
+import {
+  Calendar,
+  Car,
+  CircleCheckBig,
+  CreditCard,
+  FileText,
+  Home,
+  House,
+  LogOut,
+  Menu,
+  Receipt,
+  Repeat,
+  Settings,
+  ShoppingCart,
+  X,
+} from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { NavLink, Outlet } from "react-router-dom"
 
@@ -7,41 +23,55 @@ import { useAuthStore } from "@/store/authStore"
 import { cn } from "@/utils/cn"
 
 const NAV_ITEMS = [
-  { to: "/", label: "Hoy", icon: "🏠", end: true },
-  { to: "/tasks", label: "Tareas", icon: "✅" },
-  { to: "/reminders", label: "Recordatorios", icon: "🔔" },
-  { to: "/calendar", label: "Calendario", icon: "📅" },
-  { to: "/finance", label: "Finanzas", icon: "💰" },
-  { to: "/subscriptions", label: "Suscripciones", icon: "🔁" },
-  { to: "/households", label: "Hogar", icon: "🏡" },
-  { to: "/shopping", label: "Compras", icon: "🛒" },
-  { to: "/documents", label: "Documentos", icon: "📄" },
-  { to: "/vehicles", label: "Vehículos", icon: "🚗" },
-  { to: "/settings", label: "Configuración", icon: "⚙️" },
+  { to: "/", label: "Hoy", icon: Home, end: true },
+  { to: "/tasks", label: "Tareas", icon: CircleCheckBig },
+  { to: "/reminders", label: "Recordatorios", icon: Receipt },
+  { to: "/calendar", label: "Calendario", icon: Calendar },
+  { to: "/finance", label: "Finanzas", icon: CreditCard },
+  { to: "/subscriptions", label: "Suscripciones", icon: Repeat },
+  { to: "/households", label: "Hogar", icon: House },
+  { to: "/shopping", label: "Compras", icon: ShoppingCart },
+  { to: "/documents", label: "Documentos", icon: FileText },
+  { to: "/vehicles", label: "Vehículos", icon: Car },
+  { to: "/settings", label: "Configuración", icon: Settings },
 ]
 
 function NavList({ onNavigate }: { onNavigate?: () => void }) {
   return (
-    <nav className="flex flex-col gap-1">
-      {NAV_ITEMS.map((item) => (
-        <NavLink
-          key={item.to}
-          to={item.to}
-          end={item.end}
-          onClick={onNavigate}
-          className={({ isActive }) =>
-            cn(
-              "focus-ring flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-              isActive
-                ? "bg-brand-50 text-brand-700 dark:bg-brand-950/60 dark:text-brand-300"
-                : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800",
-            )
-          }
-        >
-          <span aria-hidden="true">{item.icon}</span>
-          {item.label}
-        </NavLink>
-      ))}
+    <nav className="flex flex-col gap-0.5">
+      {NAV_ITEMS.map((item) => {
+        const Icon = item.icon
+        return (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.end}
+            onClick={onNavigate}
+            className={({ isActive }) =>
+              cn(
+                "focus-ring group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150",
+                isActive
+                  ? "bg-brand-50 text-brand-700 dark:bg-brand-950/60 dark:text-brand-300"
+                  : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800",
+              )
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "absolute top-1/2 left-0 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-brand-600 transition-opacity duration-150",
+                    isActive ? "opacity-100" : "opacity-0",
+                  )}
+                />
+                <Icon className="size-[18px] shrink-0" aria-hidden="true" />
+                {item.label}
+              </>
+            )}
+          </NavLink>
+        )
+      })}
     </nav>
   )
 }
@@ -74,17 +104,21 @@ export function AppLayout() {
         <button
           type="button"
           onClick={() => void logout()}
-          className="focus-ring flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+          className="focus-ring flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
         >
-          <span aria-hidden="true">↩</span>
+          <LogOut className="size-[18px]" aria-hidden="true" />
           Cerrar sesión
         </button>
       </aside>
 
       {mobileNavOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
-          <div className="absolute inset-0 bg-slate-900/40" onClick={() => setMobileNavOpen(false)} aria-hidden="true" />
-          <div className="absolute inset-y-0 left-0 flex w-72 flex-col bg-white px-4 py-6 dark:bg-slate-900">
+          <div
+            className="animate-fade-in absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            onClick={() => setMobileNavOpen(false)}
+            aria-hidden="true"
+          />
+          <div className="animate-modal-in absolute inset-y-0 left-0 flex w-72 flex-col bg-white px-4 py-6 dark:bg-slate-900">
             <div className="flex items-center justify-between">
               <Logo />
               <button
@@ -93,7 +127,7 @@ export function AppLayout() {
                 onClick={() => setMobileNavOpen(false)}
                 className="focus-ring rounded-md p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
-                ✕
+                <X className="size-5" aria-hidden="true" />
               </button>
             </div>
             <div className="mt-8 flex-1">
@@ -102,9 +136,9 @@ export function AppLayout() {
             <button
               type="button"
               onClick={() => void logout()}
-              className="focus-ring flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+              className="focus-ring flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
             >
-              <span aria-hidden="true">↩</span>
+              <LogOut className="size-[18px]" aria-hidden="true" />
               Cerrar sesión
             </button>
           </div>
@@ -121,7 +155,7 @@ export function AppLayout() {
             onClick={() => setMobileNavOpen(true)}
             className="focus-ring rounded-md p-1.5 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 lg:hidden"
           >
-            ☰
+            <Menu className="size-5" aria-hidden="true" />
           </button>
           <div className="flex items-center gap-2">
             <NotificationBell />

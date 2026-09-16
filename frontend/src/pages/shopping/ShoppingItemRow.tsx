@@ -1,3 +1,5 @@
+import { Check, Trash2 } from "lucide-react"
+
 import type { ShoppingItem } from "@/types/shopping"
 
 interface ShoppingItemRowProps {
@@ -8,7 +10,7 @@ interface ShoppingItemRowProps {
 
 export function ShoppingItemRow({ item, onToggle, onDelete }: ShoppingItemRowProps) {
   return (
-    <li className="flex items-center gap-3 border-b border-slate-100 py-2.5 last:border-0 dark:border-slate-800">
+    <li className="flex items-center gap-3 rounded-lg border-b border-slate-100 px-2 py-2.5 transition-colors last:border-0 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/60">
       <button
         type="button"
         role="checkbox"
@@ -18,11 +20,7 @@ export function ShoppingItemRow({ item, onToggle, onDelete }: ShoppingItemRowPro
         className="focus-ring flex size-5 shrink-0 items-center justify-center rounded-full border-2 border-slate-300 text-white transition-colors data-[checked=true]:border-brand-600 data-[checked=true]:bg-brand-600 dark:border-slate-600"
         data-checked={item.is_purchased}
       >
-        {item.is_purchased && (
-          <svg viewBox="0 0 16 16" className="size-3" fill="currentColor" aria-hidden="true">
-            <path d="M13.7 3.7 6 11.4 2.3 7.7 3.7 6.3 6 8.6l6.3-6.3z" />
-          </svg>
-        )}
+        {item.is_purchased && <Check className="size-3" aria-hidden="true" />}
       </button>
 
       <div className="min-w-0 flex-1">
@@ -45,9 +43,10 @@ export function ShoppingItemRow({ item, onToggle, onDelete }: ShoppingItemRowPro
       <button
         type="button"
         onClick={() => onDelete(item)}
-        className="focus-ring shrink-0 text-xs font-medium text-slate-400 hover:text-red-600 dark:hover:text-red-400"
+        aria-label="Eliminar ítem"
+        className="focus-ring shrink-0 rounded p-1 text-slate-400 hover:text-red-600 dark:hover:text-red-400"
       >
-        Eliminar
+        <Trash2 className="size-3.5" aria-hidden="true" />
       </button>
     </li>
   )

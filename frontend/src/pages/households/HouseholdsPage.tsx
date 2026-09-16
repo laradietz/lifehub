@@ -1,3 +1,4 @@
+import { ArrowRight, House, Plus } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 
@@ -7,6 +8,7 @@ import { Skeleton } from "@/components/ui/Skeleton"
 import { HouseholdFormModal } from "@/pages/households/HouseholdFormModal"
 import { extractErrorMessage } from "@/services/api"
 import { householdService } from "@/services/householdService"
+import { toast } from "@/store/toastStore"
 import type { HouseholdPayload, PendingInvitation } from "@/types/household"
 import { useHouseholds } from "@/hooks/useHouseholds"
 
@@ -34,6 +36,7 @@ export function HouseholdsPage() {
 
   async function handleCreate(payload: HouseholdPayload) {
     await householdService.create(payload)
+    toast.success("Hogar creado.")
     await reload()
   }
 
@@ -42,6 +45,7 @@ export function HouseholdsPage() {
     setRespondingId(invitation.id)
     try {
       await householdService.acceptInvitation(invitation.id)
+      toast.success(`Te sumaste a ${invitation.household_name}.`)
       await Promise.all([loadPending(), reload()])
     } catch (err) {
       setError(extractErrorMessage(err, "No pudimos aceptar la invitación."))
@@ -55,6 +59,7 @@ export function HouseholdsPage() {
     setRespondingId(invitation.id)
     try {
       await householdService.declineInvitation(invitation.id)
+      toast.info("Invitación rechazada.")
       await loadPending()
     } catch (err) {
       setError(extractErrorMessage(err, "No pudimos rechazar la invitación."))
@@ -72,7 +77,10 @@ export function HouseholdsPage() {
             Compartí tareas y listas de compras con quien vivís.
           </p>
         </div>
-        <Button onClick={() => setIsFormOpen(true)}>Nuevo hogar</Button>
+        <Button onClick={() => setIsFormOpen(true)}>
+          <Plus className="size-4" aria-hidden="true" />
+          Nuevo hogar
+        </Button>
       </div>
 
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
@@ -118,7 +126,9 @@ export function HouseholdsPage() {
           </div>
         ) : households.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-14 text-center">
-            <span className="text-2xl">🏡</span>
+            <span className="flex size-12 items-center justify-center rounded-full bg-brand-50 text-brand-500 dark:bg-brand-950/60 dark:text-brand-300">
+              <House className="size-6" aria-hidden="true" />
+            </span>
             <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Todavía no tenés hogares</p>
             <p className="text-sm text-slate-500 dark:text-slate-400">
               Creá uno para compartir tareas y listas de compras.
@@ -129,7 +139,7 @@ export function HouseholdsPage() {
             {households.map((household) => (
               <li
                 key={household.id}
-                className="flex items-center justify-between gap-3 border-b border-slate-100 py-3 last:border-0 dark:border-slate-800"
+                className="flex items-center justify-between gap-3 rounded-lg border-b border-slate-100 px-2 py-3 transition-colors last:border-0 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/60"
               >
                 <div>
                   <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{household.name}</p>
@@ -139,9 +149,10 @@ export function HouseholdsPage() {
                 </div>
                 <Link
                   to={`/households/${household.id}`}
-                  className="focus-ring text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400"
+                  className="focus-ring flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400"
                 >
-                  Ver →
+                  Ver
+                  <ArrowRight className="size-3.5" aria-hidden="true" />
                 </Link>
               </li>
             ))}

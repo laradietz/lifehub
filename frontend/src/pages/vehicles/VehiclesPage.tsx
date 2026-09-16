@@ -1,3 +1,4 @@
+import { Car, Pencil, Plus, Trash2, Wrench } from "lucide-react"
 import { useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/Button"
@@ -9,6 +10,7 @@ import { MaintenanceItem } from "@/pages/vehicles/MaintenanceItem"
 import { VehicleFormModal } from "@/pages/vehicles/VehicleFormModal"
 import { extractErrorMessage } from "@/services/api"
 import { settingsService } from "@/services/settingsService"
+import { toast } from "@/store/toastStore"
 import { vehicleService } from "@/services/vehicleService"
 import type { Vehicle, VehicleMaintenance, VehicleMaintenancePayload, VehiclePayload } from "@/types/vehicle"
 
@@ -55,6 +57,7 @@ export function VehiclesPage() {
 
   async function handleCreateVehicle(payload: VehiclePayload) {
     const created = await vehicleService.create(payload)
+    toast.success("Vehículo creado.")
     await loadVehicles()
     setSelectedVehicleId(created.id)
   }
@@ -62,6 +65,7 @@ export function VehiclesPage() {
   async function handleUpdateVehicle(payload: VehiclePayload) {
     if (!editingVehicle) return
     await vehicleService.update(editingVehicle.id, payload)
+    toast.success("Vehículo actualizado.")
     await loadVehicles()
   }
 
@@ -72,7 +76,10 @@ export function VehiclesPage() {
       await vehicleService.remove(selectedVehicle.id)
       setSelectedVehicleId(null)
       setIsDeleteVehicleOpen(false)
+      toast.success("Vehículo eliminado.")
       await loadVehicles()
+    } catch (err) {
+      toast.error(extractErrorMessage(err, "No pudimos eliminar el vehículo."))
     } finally {
       setIsDeletingVehicle(false)
     }
@@ -82,8 +89,10 @@ export function VehiclesPage() {
     if (!selectedVehicle) return
     if (editingMaintenance) {
       await vehicleService.updateMaintenance(selectedVehicle.id, editingMaintenance.id, payload)
+      toast.success("Mantenimiento actualizado.")
     } else {
       await vehicleService.addMaintenance(selectedVehicle.id, payload)
+      toast.success("Mantenimiento registrado.")
     }
     await loadVehicles()
   }
@@ -94,7 +103,10 @@ export function VehiclesPage() {
     try {
       await vehicleService.removeMaintenance(selectedVehicle.id, deletingMaintenance.id)
       setDeletingMaintenance(null)
+      toast.success("Mantenimiento eliminado.")
       await loadVehicles()
+    } catch (err) {
+      toast.error(extractErrorMessage(err, "No pudimos eliminar el mantenimiento."))
     } finally {
       setIsDeletingMaintenance(false)
     }
@@ -113,6 +125,7 @@ export function VehiclesPage() {
             setIsVehicleFormOpen(true)
           }}
         >
+          <Plus className="size-4" aria-hidden="true" />
           Nuevo vehículo
         </Button>
       </div>
@@ -123,7 +136,9 @@ export function VehiclesPage() {
         <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
       ) : vehicles.length === 0 ? (
         <Card className="flex flex-col items-center gap-2 px-5 py-14 text-center">
-          <span className="text-2xl">🚗</span>
+          <span className="flex size-12 items-center justify-center rounded-full bg-brand-50 text-brand-500 dark:bg-brand-950/60 dark:text-brand-300">
+            <Car className="size-6" aria-hidden="true" />
+          </span>
           <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Todavía no tenés vehículos</p>
           <p className="text-sm text-slate-500 dark:text-slate-400">Agregá tu auto para llevar el registro de mantenimiento.</p>
         </Card>
@@ -168,15 +183,17 @@ export function VehiclesPage() {
                         setEditingVehicle(selectedVehicle)
                         setIsVehicleFormOpen(true)
                       }}
-                      className="focus-ring text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                      className="focus-ring flex items-center gap-1 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
                     >
+                      <Pencil className="size-3.5" aria-hidden="true" />
                       Editar
                     </button>
                     <button
                       type="button"
                       onClick={() => setIsDeleteVehicleOpen(true)}
-                      className="focus-ring text-red-600 hover:text-red-700 dark:text-red-400"
+                      className="focus-ring flex items-center gap-1 text-red-600 hover:text-red-700 dark:text-red-400"
                     >
+                      <Trash2 className="size-3.5" aria-hidden="true" />
                       Eliminar
                     </button>
                   </div>
@@ -194,14 +211,18 @@ export function VehiclesPage() {
                       setIsMaintenanceFormOpen(true)
                     }}
                   >
+                    <Plus className="size-4" aria-hidden="true" />
                     Agregar
                   </Button>
                 </div>
 
                 {selectedVehicle.maintenance_records.length === 0 ? (
-                  <p className="py-4 text-center text-sm text-slate-500 dark:text-slate-400">
-                    Todavía no registraste ningún mantenimiento.
-                  </p>
+                  <div className="flex flex-col items-center gap-2 py-8 text-center">
+                    <Wrench className="size-8 text-slate-300 dark:text-slate-600" aria-hidden="true" />
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      Todavía no registraste ningún mantenimiento.
+                    </p>
+                  </div>
                 ) : (
                   <ul>
                     {selectedVehicle.maintenance_records.map((record) => (

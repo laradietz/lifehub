@@ -1,20 +1,24 @@
-import { useEffect, useState } from "react"
+import { FileText, Plus } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
 
 import { Button } from "@/components/ui/Button"
 import { Card } from "@/components/ui/Card"
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog"
+import { SearchInput } from "@/components/ui/SearchInput"
 import { Select } from "@/components/ui/Select"
 import { Skeleton } from "@/components/ui/Skeleton"
 import { DocumentFormModal } from "@/pages/documents/DocumentFormModal"
 import { DocumentItem } from "@/pages/documents/DocumentItem"
 import { extractErrorMessage } from "@/services/api"
 import { documentService } from "@/services/documentService"
+import { toast } from "@/store/toastStore"
 import type { Document, DocumentCategory, DocumentPayload } from "@/types/document"
 import { DOCUMENT_CATEGORY_LABEL } from "@/utils/documentMeta"
 
 export function DocumentsPage() {
   const [documents, setDocuments] = useState<Document[]>([])
   const [categoryFilter, setCategoryFilter] = useState<DocumentCategory | "">("")
+  const [search, setSearch] = useState("")
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -44,8 +48,10 @@ export function DocumentsPage() {
   async function handleCreateOrUpdate(payload: DocumentPayload) {
     if (editingDocument) {
       await documentService.update(editingDocument.id, payload)
+      toast.success("Documento actualizado.")
     } else {
       await documentService.create(payload)
+      toast.success("Documento creado.")
     }
     await loadDocuments()
   }
@@ -56,11 +62,20 @@ export function DocumentsPage() {
     try {
       await documentService.remove(deletingDocument.id)
       setDeletingDocument(null)
+      toast.success("Documento eliminado.")
       await loadDocuments()
+    } catch (err) {
+      toast.error(extractErrorMessage(err, "No pudimos eliminar el documento."))
     } finally {
       setIsDeleting(false)
     }
   }
+
+  const filteredDocuments = useMemo(() => {
+    const query = search.trim().toLowerCase()
+    if (!query) return documents
+    return documents.filter((document) => document.name.toLowerCase().includes(query))
+  }, [documents, search])
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
@@ -77,23 +92,27 @@ export function DocumentsPage() {
             setIsFormOpen(true)
           }}
         >
+          <Plus className="size-4" aria-hidden="true" />
           Nuevo documento
         </Button>
       </div>
 
-      <div className="max-w-xs">
-        <Select
-          label="Filtrar por categoría"
-          value={categoryFilter}
-          onChange={(event) => setCategoryFilter(event.target.value as DocumentCategory | "")}
-        >
-          <option value="">Todas</option>
-          {Object.entries(DOCUMENT_CATEGORY_LABEL).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </Select>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="max-w-xs flex-1">
+          <Select
+            label="Filtrar por categoría"
+            value={categoryFilter}
+            onChange={(event) => setCategoryFilter(event.target.value as DocumentCategory | "")}
+          >
+            <option value="">Todas</option>
+            {Object.entries(DOCUMENT_CATEGORY_LABEL).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </Select>
+        </div>
+        <SearchInput value={search} onChange={setSearch} placeholder="Buscar documentos..." className="sm:w-64" />
       </div>
 
       <Card className="px-5 py-2">
@@ -107,15 +126,23 @@ export function DocumentsPage() {
           <p className="py-8 text-center text-sm text-red-600 dark:text-red-400">{error}</p>
         ) : documents.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-14 text-center">
-            <span className="text-2xl">📄</span>
+            <span className="flex size-12 items-center justify-center rounded-full bg-brand-50 text-brand-500 dark:bg-brand-950/60 dark:text-brand-300">
+              <FileText className="size-6" aria-hidden="true" />
+            </span>
             <p className="text-sm font-medium text-slate-700 dark:text-slate-200">No tenés documentos</p>
             <p className="text-sm text-slate-500 dark:text-slate-400">
               Guardá tu DNI, pólizas de seguro o garantías para tenerlos siempre a mano.
             </p>
           </div>
+        ) : filteredDocuments.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 py-14 text-center">
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+              Ningún documento coincide con "{search}"
+            </p>
+          </div>
         ) : (
           <ul>
-            {documents.map((document) => (
+            {filteredDocuments.map((document) => (
               <DocumentItem
                 key={document.id}
                 document={document}

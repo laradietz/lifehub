@@ -1,3 +1,4 @@
+import { Laptop, Moon, Sun } from "lucide-react"
 import { type FormEvent, useEffect, useState } from "react"
 
 import { Alert } from "@/components/ui/Alert"
@@ -9,6 +10,7 @@ import { extractErrorMessage } from "@/services/api"
 import { authService } from "@/services/authService"
 import { settingsService } from "@/services/settingsService"
 import { useAuthStore } from "@/store/authStore"
+import { toast } from "@/store/toastStore"
 import { cn } from "@/utils/cn"
 import { setTheme, type Theme } from "@/utils/theme"
 
@@ -22,10 +24,10 @@ const CURRENCY_OPTIONS = [
   { code: "BRL", label: "BRL — Real brasileño" },
 ]
 
-const THEME_OPTIONS: { value: Theme; label: string; icon: string }[] = [
-  { value: "light", label: "Claro", icon: "☀️" },
-  { value: "dark", label: "Oscuro", icon: "🌙" },
-  { value: "system", label: "Sistema", icon: "💻" },
+const THEME_OPTIONS: { value: Theme; label: string; icon: typeof Sun }[] = [
+  { value: "light", label: "Claro", icon: Sun },
+  { value: "dark", label: "Oscuro", icon: Moon },
+  { value: "system", label: "Sistema", icon: Laptop },
 ]
 
 const WIDGET_OPTIONS = [
@@ -72,6 +74,7 @@ export function SettingsPage() {
     setCurrency(nextCurrency)
     try {
       await settingsService.update({ currency: nextCurrency })
+      toast.success("Moneda actualizada.")
     } catch (err) {
       setCurrency(previous)
       setWidgetsError(extractErrorMessage(err, "No pudimos guardar la moneda."))
@@ -100,6 +103,7 @@ export function SettingsPage() {
       const updated = await authService.updateMe({ full_name: fullName })
       setUser(updated)
       setSuccess(true)
+      toast.success("Perfil actualizado.")
     } catch (err) {
       setError(extractErrorMessage(err, "No pudimos guardar los cambios."))
     } finally {
@@ -171,26 +175,27 @@ export function SettingsPage() {
         <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Apariencia</h2>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Elegí cómo se ve Vida En Orden en este dispositivo.</p>
         <div className="mt-4 grid grid-cols-3 gap-2">
-          {THEME_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              disabled={isLoadingWidgets}
-              aria-pressed={theme === option.value}
-              onClick={() => void handleThemeChange(option.value)}
-              className={cn(
-                "focus-ring flex flex-col items-center gap-1 rounded-lg border px-3 py-3 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60",
-                theme === option.value
-                  ? "border-brand-500 bg-brand-50 text-brand-700 dark:border-brand-400 dark:bg-brand-950/40 dark:text-brand-300"
-                  : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800",
-              )}
-            >
-              <span aria-hidden="true" className="text-lg">
-                {option.icon}
-              </span>
-              {option.label}
-            </button>
-          ))}
+          {THEME_OPTIONS.map((option) => {
+            const Icon = option.icon
+            return (
+              <button
+                key={option.value}
+                type="button"
+                disabled={isLoadingWidgets}
+                aria-pressed={theme === option.value}
+                onClick={() => void handleThemeChange(option.value)}
+                className={cn(
+                  "focus-ring flex flex-col items-center gap-1.5 rounded-lg border px-3 py-3 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-60",
+                  theme === option.value
+                    ? "border-brand-500 bg-brand-50 text-brand-700 dark:border-brand-400 dark:bg-brand-950/40 dark:text-brand-300"
+                    : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800",
+                )}
+              >
+                <Icon className="size-5" aria-hidden="true" />
+                {option.label}
+              </button>
+            )
+          })}
         </div>
       </Card>
 

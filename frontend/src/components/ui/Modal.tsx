@@ -62,14 +62,18 @@ export function Modal({ title, description, isOpen, onClose, children, size = "m
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/50" onClick={onClose} aria-hidden="true" />
+      <div
+        className="animate-fade-in absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+        onClick={onClose}
+        aria-hidden="true"
+      />
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
         tabIndex={-1}
-        className={`focus-ring relative max-h-[90vh] w-full overflow-y-auto rounded-xl bg-white p-6 shadow-xl dark:bg-slate-900 ${size === "sm" ? "max-w-sm" : "max-w-lg"}`}
+        className={`animate-modal-in focus-ring relative max-h-[90vh] w-full overflow-y-auto rounded-xl bg-white p-6 shadow-xl dark:bg-slate-900 ${size === "sm" ? "max-w-sm" : "max-w-lg"}`}
       >
         <div className="mb-4 flex items-start justify-between gap-4">
           <div>

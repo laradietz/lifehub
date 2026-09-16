@@ -1,3 +1,5 @@
+import { Check, Pencil, Trash2 } from "lucide-react"
+
 import { Badge } from "@/components/ui/Badge"
 import type { Category } from "@/types/category"
 import type { Reminder } from "@/types/reminder"
@@ -24,7 +26,7 @@ export function ReminderItem({ reminder, categories, onToggleComplete, onEdit, o
   const due = dueLabel(reminder.due_date)
 
   return (
-    <li className="flex items-start gap-3 border-b border-slate-100 py-3 last:border-0 dark:border-slate-800">
+    <li className="flex items-start gap-3 rounded-lg border-b border-slate-100 px-2 py-3 transition-colors last:border-0 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/60">
       <button
         type="button"
         role="checkbox"
@@ -34,11 +36,7 @@ export function ReminderItem({ reminder, categories, onToggleComplete, onEdit, o
         className="focus-ring mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border-2 border-slate-300 text-white transition-colors data-[checked=true]:border-brand-600 data-[checked=true]:bg-brand-600 dark:border-slate-600"
         data-checked={reminder.is_completed}
       >
-        {reminder.is_completed && (
-          <svg viewBox="0 0 16 16" className="size-3" fill="currentColor" aria-hidden="true">
-            <path d="M13.7 3.7 6 11.4 2.3 7.7 3.7 6.3 6 8.6l6.3-6.3z" />
-          </svg>
-        )}
+        {reminder.is_completed && <Check className="size-3" aria-hidden="true" />}
       </button>
 
       <div className="min-w-0 flex-1">
@@ -63,10 +61,20 @@ export function ReminderItem({ reminder, categories, onToggleComplete, onEdit, o
           {reminder.advance_notice_days.length > 0 && !reminder.is_completed && (
             <span>Avisar: {reminder.advance_notice_days.join(", ")} días antes</span>
           )}
-          <button type="button" onClick={() => onEdit(reminder)} className="focus-ring font-medium hover:text-slate-600 dark:hover:text-slate-300">
+          <button
+            type="button"
+            onClick={() => onEdit(reminder)}
+            className="focus-ring flex items-center gap-1 font-medium hover:text-slate-600 dark:hover:text-slate-300"
+          >
+            <Pencil className="size-3.5" aria-hidden="true" />
             Editar
           </button>
-          <button type="button" onClick={() => onDelete(reminder)} className="focus-ring font-medium hover:text-red-600 dark:hover:text-red-400">
+          <button
+            type="button"
+            onClick={() => onDelete(reminder)}
+            className="focus-ring flex items-center gap-1 font-medium hover:text-red-600 dark:hover:text-red-400"
+          >
+            <Trash2 className="size-3.5" aria-hidden="true" />
             Eliminar
           </button>
         </div>

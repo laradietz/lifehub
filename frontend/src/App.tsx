@@ -1,6 +1,7 @@
 import { useEffect } from "react"
 import { Navigate, Route, Routes } from "react-router-dom"
 
+import { Toaster } from "@/components/ui/Toaster"
 import { AppLayout } from "@/layouts/AppLayout"
 import { AuthLayout } from "@/layouts/AuthLayout"
 import { ForgotPasswordPage } from "@/pages/auth/ForgotPasswordPage"
@@ -34,32 +35,35 @@ export default function App() {
   useThemeSync()
 
   return (
-    <Routes>
-      <Route element={<PublicOnlyRoute />}>
-        <Route element={<AuthLayout><LoginPage /></AuthLayout>} path="/login" />
-        <Route element={<AuthLayout><RegisterPage /></AuthLayout>} path="/register" />
-        <Route element={<AuthLayout><ForgotPasswordPage /></AuthLayout>} path="/forgot-password" />
-      </Route>
-
-      <Route element={<ProtectedRoute />}>
-        <Route element={<AppLayout />}>
-          <Route index element={<DashboardPage />} />
-          <Route path="/tasks" element={<TasksPage />} />
-          <Route path="/reminders" element={<RemindersPage />} />
-          <Route path="/calendar" element={<CalendarPage />} />
-          <Route path="/finance" element={<FinancePage />} />
-          <Route path="/subscriptions" element={<SubscriptionsPage />} />
-          <Route path="/households" element={<HouseholdsPage />} />
-          <Route path="/households/:id" element={<HouseholdDetailPage />} />
-          <Route path="/shopping" element={<ShoppingPage />} />
-          <Route path="/documents" element={<DocumentsPage />} />
-          <Route path="/vehicles" element={<VehiclesPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
+    <>
+      <Toaster />
+      <Routes>
+        <Route element={<PublicOnlyRoute />}>
+          <Route element={<AuthLayout><LoginPage /></AuthLayout>} path="/login" />
+          <Route element={<AuthLayout><RegisterPage /></AuthLayout>} path="/register" />
+          <Route element={<AuthLayout><ForgotPasswordPage /></AuthLayout>} path="/forgot-password" />
         </Route>
-      </Route>
 
-      <Route path="/404" element={<NotFoundPage />} />
-      <Route path="*" element={<Navigate to="/404" replace />} />
-    </Routes>
+        <Route element={<ProtectedRoute />}>
+          <Route element={<AppLayout />}>
+            <Route index element={<DashboardPage />} />
+            <Route path="/tasks" element={<TasksPage />} />
+            <Route path="/reminders" element={<RemindersPage />} />
+            <Route path="/calendar" element={<CalendarPage />} />
+            <Route path="/finance" element={<FinancePage />} />
+            <Route path="/subscriptions" element={<SubscriptionsPage />} />
+            <Route path="/households" element={<HouseholdsPage />} />
+            <Route path="/households/:id" element={<HouseholdDetailPage />} />
+            <Route path="/shopping" element={<ShoppingPage />} />
+            <Route path="/documents" element={<DocumentsPage />} />
+            <Route path="/vehicles" element={<VehiclesPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+          </Route>
+        </Route>
+
+        <Route path="/404" element={<NotFoundPage />} />
+        <Route path="*" element={<Navigate to="/404" replace />} />
+      </Routes>
+    </>
   )
 }

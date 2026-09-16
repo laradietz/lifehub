@@ -1,20 +1,24 @@
-import { useEffect, useState } from "react"
+import { Bell, Plus } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
 
 import { Button } from "@/components/ui/Button"
 import { Card } from "@/components/ui/Card"
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog"
+import { SearchInput } from "@/components/ui/SearchInput"
 import { Skeleton } from "@/components/ui/Skeleton"
 import { useCategories } from "@/hooks/useCategories"
 import { extractErrorMessage } from "@/services/api"
 import { reminderService } from "@/services/reminderService"
 import { ReminderFormModal } from "@/pages/reminders/ReminderFormModal"
 import { ReminderItem } from "@/pages/reminders/ReminderItem"
+import { toast } from "@/store/toastStore"
 import type { Reminder, ReminderPayload } from "@/types/reminder"
 
 export function RemindersPage() {
   const { categories } = useCategories("reminder")
   const [reminders, setReminders] = useState<Reminder[]>([])
   const [includeCompleted, setIncludeCompleted] = useState(false)
+  const [search, setSearch] = useState("")
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -44,14 +48,17 @@ export function RemindersPage() {
   async function handleCreateOrUpdate(payload: ReminderPayload) {
     if (editingReminder) {
       await reminderService.update(editingReminder.id, payload)
+      toast.success("Recordatorio actualizado.")
     } else {
       await reminderService.create(payload)
+      toast.success("Recordatorio creado.")
     }
     await loadReminders()
   }
 
   async function handleToggleComplete(reminder: Reminder) {
     await reminderService.update(reminder.id, { is_completed: !reminder.is_completed })
+    if (!reminder.is_completed) toast.success("¡Recordatorio resuelto!")
     await loadReminders()
   }
 
@@ -61,11 +68,22 @@ export function RemindersPage() {
     try {
       await reminderService.remove(deletingReminder.id)
       setDeletingReminder(null)
+      toast.success("Recordatorio eliminado.")
       await loadReminders()
+    } catch (err) {
+      toast.error(extractErrorMessage(err, "No pudimos eliminar el recordatorio."))
     } finally {
       setIsDeleting(false)
     }
   }
+
+  const filteredReminders = useMemo(() => {
+    const query = search.trim().toLowerCase()
+    if (!query) return reminders
+    return reminders.filter(
+      (reminder) => reminder.name.toLowerCase().includes(query) || reminder.description?.toLowerCase().includes(query),
+    )
+  }, [reminders, search])
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
@@ -82,19 +100,23 @@ export function RemindersPage() {
             setIsFormOpen(true)
           }}
         >
+          <Plus className="size-4" aria-hidden="true" />
           Nuevo recordatorio
         </Button>
       </div>
 
-      <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-        <input
-          type="checkbox"
-          checked={includeCompleted}
-          onChange={(event) => setIncludeCompleted(event.target.checked)}
-          className="size-4 rounded border-slate-300 text-brand-600 focus-visible:ring-2 focus-visible:ring-brand-500 dark:border-slate-600"
-        />
-        Mostrar resueltos
-      </label>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+          <input
+            type="checkbox"
+            checked={includeCompleted}
+            onChange={(event) => setIncludeCompleted(event.target.checked)}
+            className="size-4 rounded border-slate-300 text-brand-600 focus-visible:ring-2 focus-visible:ring-brand-500 dark:border-slate-600"
+          />
+          Mostrar resueltos
+        </label>
+        <SearchInput value={search} onChange={setSearch} placeholder="Buscar recordatorios..." className="sm:w-64" />
+      </div>
 
       <Card className="px-5 py-2">
         {isLoading ? (
@@ -107,15 +129,23 @@ export function RemindersPage() {
           <p className="py-8 text-center text-sm text-red-600 dark:text-red-400">{error}</p>
         ) : reminders.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-14 text-center">
-            <span className="text-2xl">🔔</span>
+            <span className="flex size-12 items-center justify-center rounded-full bg-brand-50 text-brand-500 dark:bg-brand-950/60 dark:text-brand-300">
+              <Bell className="size-6" aria-hidden="true" />
+            </span>
             <p className="text-sm font-medium text-slate-700 dark:text-slate-200">No tenés recordatorios</p>
             <p className="text-sm text-slate-500 dark:text-slate-400">
               Agregá seguros, suscripciones o documentos para no olvidarte de renovarlos.
             </p>
           </div>
+        ) : filteredReminders.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 py-14 text-center">
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+              Ningún recordatorio coincide con "{search}"
+            </p>
+          </div>
         ) : (
           <ul>
-            {reminders.map((reminder) => (
+            {filteredReminders.map((reminder) => (
               <ReminderItem
                 key={reminder.id}
                 reminder={reminder}

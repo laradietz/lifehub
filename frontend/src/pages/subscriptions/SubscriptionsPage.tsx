@@ -1,13 +1,17 @@
-import { useEffect, useState } from "react"
+import { Plus, Repeat } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
 
 import { Button } from "@/components/ui/Button"
 import { Card } from "@/components/ui/Card"
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog"
+import { SearchInput } from "@/components/ui/SearchInput"
 import { Skeleton } from "@/components/ui/Skeleton"
 import { useCategories } from "@/hooks/useCategories"
+import { extractErrorMessage } from "@/services/api"
 import { subscriptionService } from "@/services/subscriptionService"
 import { SubscriptionFormModal } from "@/pages/subscriptions/SubscriptionFormModal"
 import { SubscriptionItem } from "@/pages/subscriptions/SubscriptionItem"
+import { toast } from "@/store/toastStore"
 import type { Subscription, SubscriptionPayload, SubscriptionSummary } from "@/types/subscription"
 import { formatCurrency } from "@/utils/currency"
 import { formatDate } from "@/utils/taskMeta"
@@ -17,6 +21,7 @@ export function SubscriptionsPage() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
   const [summary, setSummary] = useState<SubscriptionSummary | null>(null)
   const [includeInactive, setIncludeInactive] = useState(false)
+  const [search, setSearch] = useState("")
   const [isLoading, setIsLoading] = useState(true)
 
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -46,8 +51,10 @@ export function SubscriptionsPage() {
   async function handleSubmit(payload: SubscriptionPayload) {
     if (editingSubscription) {
       await subscriptionService.update(editingSubscription.id, payload)
+      toast.success("Suscripción actualizada.")
     } else {
       await subscriptionService.create(payload)
+      toast.success("Suscripción creada.")
     }
     await loadAll()
   }
@@ -63,11 +70,20 @@ export function SubscriptionsPage() {
     try {
       await subscriptionService.remove(deletingSubscription.id)
       setDeletingSubscription(null)
+      toast.success("Suscripción eliminada.")
       await loadAll()
+    } catch (err) {
+      toast.error(extractErrorMessage(err, "No pudimos eliminar la suscripción."))
     } finally {
       setIsDeleting(false)
     }
   }
+
+  const filteredSubscriptions = useMemo(() => {
+    const query = search.trim().toLowerCase()
+    if (!query) return subscriptions
+    return subscriptions.filter((subscription) => subscription.name.toLowerCase().includes(query))
+  }, [subscriptions, search])
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
@@ -82,6 +98,7 @@ export function SubscriptionsPage() {
             setIsFormOpen(true)
           }}
         >
+          <Plus className="size-4" aria-hidden="true" />
           Nueva suscripción
         </Button>
       </div>
@@ -114,15 +131,18 @@ export function SubscriptionsPage() {
         )
       )}
 
-      <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-        <input
-          type="checkbox"
-          checked={includeInactive}
-          onChange={(event) => setIncludeInactive(event.target.checked)}
-          className="size-4 rounded border-slate-300 text-brand-600 focus-visible:ring-2 focus-visible:ring-brand-500 dark:border-slate-600"
-        />
-        Mostrar canceladas
-      </label>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+          <input
+            type="checkbox"
+            checked={includeInactive}
+            onChange={(event) => setIncludeInactive(event.target.checked)}
+            className="size-4 rounded border-slate-300 text-brand-600 focus-visible:ring-2 focus-visible:ring-brand-500 dark:border-slate-600"
+          />
+          Mostrar canceladas
+        </label>
+        <SearchInput value={search} onChange={setSearch} placeholder="Buscar suscripciones..." className="sm:w-64" />
+      </div>
 
       <Card className="px-5 py-2">
         {isLoading ? (
@@ -133,13 +153,21 @@ export function SubscriptionsPage() {
           </div>
         ) : subscriptions.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-14 text-center">
-            <span className="text-2xl">🔁</span>
+            <span className="flex size-12 items-center justify-center rounded-full bg-brand-50 text-brand-500 dark:bg-brand-950/60 dark:text-brand-300">
+              <Repeat className="size-6" aria-hidden="true" />
+            </span>
             <p className="text-sm font-medium text-slate-700 dark:text-slate-200">No tenés suscripciones</p>
             <p className="text-sm text-slate-500 dark:text-slate-400">Agregá Netflix, Spotify o tu gimnasio para llevar la cuenta.</p>
           </div>
+        ) : filteredSubscriptions.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 py-14 text-center">
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+              Ninguna suscripción coincide con "{search}"
+            </p>
+          </div>
         ) : (
           <ul>
-            {subscriptions.map((subscription) => (
+            {filteredSubscriptions.map((subscription) => (
               <SubscriptionItem
                 key={subscription.id}
                 subscription={subscription}

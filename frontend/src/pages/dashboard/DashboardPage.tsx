@@ -1,3 +1,4 @@
+import { AlertTriangle, Bell, CalendarDays, Compass, ListChecks, Wallet } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 
@@ -10,13 +11,39 @@ import { useAuthStore } from "@/store/authStore"
 import type { DashboardSummary } from "@/types/dashboard"
 import { formatCompactCurrency, formatCurrency } from "@/utils/currency"
 import { formatDate, PRIORITY_TONE } from "@/utils/taskMeta"
+import { cn } from "@/utils/cn"
 
-function StatTile({ label, value, tone }: { label: string; value: number; tone?: "red" | "default" }) {
+function CardHeading({ icon: Icon, title }: { icon: typeof Wallet; title: string }) {
   return (
-    <div className="flex flex-col gap-1 rounded-lg bg-slate-50 px-4 py-3 dark:bg-slate-800/60">
-      <span className={`text-2xl font-bold whitespace-nowrap ${tone === "red" && value > 0 ? "text-red-600 dark:text-red-400" : "text-slate-900 dark:text-slate-100"}`}>
-        {value}
+    <div className="flex items-center gap-2">
+      <span className="flex size-7 items-center justify-center rounded-md bg-brand-50 text-brand-600 dark:bg-brand-950/60 dark:text-brand-300">
+        <Icon className="size-4" aria-hidden="true" />
       </span>
+      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
+    </div>
+  )
+}
+
+function StatTile({
+  label,
+  value,
+  tone,
+  icon: Icon,
+}: {
+  label: string
+  value: number
+  tone?: "red" | "default"
+  icon?: typeof AlertTriangle
+}) {
+  const isAlert = tone === "red" && value > 0
+  return (
+    <div className="flex flex-col gap-1.5 rounded-lg bg-slate-50 px-4 py-3 transition-colors dark:bg-slate-800/60">
+      <div className="flex items-center justify-between">
+        <span className={`text-2xl font-bold whitespace-nowrap ${isAlert ? "text-red-600 dark:text-red-400" : "text-slate-900 dark:text-slate-100"}`}>
+          {value}
+        </span>
+        {Icon && <Icon className={cn("size-4", isAlert ? "text-red-400" : "text-slate-300 dark:text-slate-600")} aria-hidden="true" />}
+      </div>
       <span className="text-xs text-slate-500 dark:text-slate-400">{label}</span>
     </div>
   )
@@ -63,9 +90,9 @@ export function DashboardPage() {
           <Skeleton className="h-40 w-full" />
         </div>
       ) : noWidgets ? (
-        <Card className="flex flex-col items-center gap-3 px-6 py-14 text-center">
-          <div className="flex size-12 items-center justify-center rounded-full bg-brand-50 text-2xl dark:bg-brand-950/60">
-            🧭
+        <Card className="animate-fade-in flex flex-col items-center gap-3 px-6 py-14 text-center">
+          <div className="flex size-12 items-center justify-center rounded-full bg-brand-50 text-brand-500 dark:bg-brand-950/60 dark:text-brand-300">
+            <Compass className="size-6" aria-hidden="true" />
           </div>
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Tu dashboard está vacío</h2>
           <p className="max-w-sm text-sm text-slate-500 dark:text-slate-400">
@@ -77,27 +104,27 @@ export function DashboardPage() {
           </p>
         </Card>
       ) : (
-        <>
+        <div className="animate-fade-in flex flex-col gap-6">
           {showToday && summary && (
             <Card className="p-5">
-              <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Hoy</h2>
-              <div className="grid grid-cols-3 gap-3">
-                <StatTile label="Tareas pendientes" value={summary.today.pending_tasks_total} />
-                <StatTile label="Vencidas" value={summary.today.tasks_overdue} tone="red" />
-                <StatTile label="Recordatorios hoy" value={summary.today.reminders_due_today} />
+              <CardHeading icon={ListChecks} title="Hoy" />
+              <div className="mt-3 grid grid-cols-3 gap-3">
+                <StatTile label="Tareas pendientes" value={summary.today.pending_tasks_total} icon={ListChecks} />
+                <StatTile label="Vencidas" value={summary.today.tasks_overdue} tone="red" icon={AlertTriangle} />
+                <StatTile label="Recordatorios hoy" value={summary.today.reminders_due_today} icon={Bell} />
               </div>
             </Card>
           )}
 
           {showFinance && summary && (
             <Card className="p-5">
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Finanzas</h2>
+              <div className="flex items-center justify-between">
+                <CardHeading icon={Wallet} title="Finanzas" />
                 <Link to="/finance" className="focus-ring text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400">
                   Ver más
                 </Link>
               </div>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <div className="flex flex-col gap-1 overflow-hidden rounded-lg bg-slate-50 px-3 py-3 dark:bg-slate-800/60">
                   <span
                     title={formatCurrency(summary.finance.income_this_month, summary.finance.currency)}
@@ -136,8 +163,8 @@ export function DashboardPage() {
 
           {showUpcoming && summary && (
             <Card className="p-5">
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Próximos vencimientos</h2>
+              <div className="flex items-center justify-between">
+                <CardHeading icon={Bell} title="Próximos vencimientos" />
                 <Link to="/reminders" className="focus-ring text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400">
                   Ver todos
                 </Link>
@@ -147,9 +174,12 @@ export function DashboardPage() {
                   No tenés vencimientos próximos.
                 </p>
               ) : (
-                <ul className="flex flex-col gap-3">
+                <ul className="mt-3 flex flex-col gap-3">
                   {summary.upcoming_reminders.map((reminder) => (
-                    <li key={reminder.id} className="flex items-center justify-between gap-3 text-sm">
+                    <li
+                      key={reminder.id}
+                      className="flex items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                    >
                       <span className="text-slate-700 dark:text-slate-200">{reminder.name}</span>
                       <div className="flex items-center gap-2">
                         <Badge tone={PRIORITY_TONE[reminder.priority]}>{formatDate(reminder.due_date)}</Badge>
@@ -163,8 +193,8 @@ export function DashboardPage() {
 
           {showWeek && summary && (
             <Card className="p-5">
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Resumen semanal</h2>
+              <div className="flex items-center justify-between">
+                <CardHeading icon={CalendarDays} title="Resumen semanal" />
                 <Link to="/tasks" className="focus-ring text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400">
                   Ver todas
                 </Link>
@@ -174,9 +204,12 @@ export function DashboardPage() {
                   No tenés tareas programadas para los próximos días.
                 </p>
               ) : (
-                <ul className="flex flex-col gap-3">
+                <ul className="mt-3 flex flex-col gap-3">
                   {summary.week_tasks.map((task) => (
-                    <li key={task.id} className="flex items-center justify-between gap-3 text-sm">
+                    <li
+                      key={task.id}
+                      className="flex items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                    >
                       <span className="text-slate-700 dark:text-slate-200">{task.title}</span>
                       <span className="text-xs text-slate-400 dark:text-slate-500">{formatDate(task.due_date)}</span>
                     </li>
@@ -185,7 +218,7 @@ export function DashboardPage() {
               )}
             </Card>
           )}
-        </>
+        </div>
       )}
     </div>
   )

@@ -1,3 +1,4 @@
+import { ChevronLeft, ChevronRight, MapPin, Pencil, Plus, Trash2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
 import { Badge } from "@/components/ui/Badge"
@@ -10,6 +11,7 @@ import { useHouseholds } from "@/hooks/useHouseholds"
 import { extractErrorMessage } from "@/services/api"
 import { eventService } from "@/services/eventService"
 import { EventFormModal } from "@/pages/calendar/EventFormModal"
+import { toast } from "@/store/toastStore"
 import type { Event, EventPayload } from "@/types/event"
 import { WEEKDAY_LABELS, buildMonthGrid, dateKey, dateKeyFromIso, formatMonthLabel, formatTime } from "@/utils/calendar"
 import { cn } from "@/utils/cn"
@@ -95,8 +97,10 @@ export function CalendarPage() {
   async function handleCreateOrUpdate(payload: EventPayload) {
     if (editingEvent) {
       await eventService.update(editingEvent.id, payload)
+      toast.success("Evento actualizado.")
     } else {
       await eventService.create(payload)
+      toast.success("Evento creado.")
     }
     await loadEvents()
   }
@@ -107,7 +111,10 @@ export function CalendarPage() {
     try {
       await eventService.remove(deletingEvent.id)
       setDeletingEvent(null)
+      toast.success("Evento eliminado.")
       await loadEvents()
+    } catch (err) {
+      toast.error(extractErrorMessage(err, "No pudimos eliminar el evento."))
     } finally {
       setIsDeleting(false)
     }
@@ -142,6 +149,7 @@ export function CalendarPage() {
             setIsFormOpen(true)
           }}
         >
+          <Plus className="size-4" aria-hidden="true" />
           Nuevo evento
         </Button>
       </div>
@@ -149,10 +157,10 @@ export function CalendarPage() {
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <Button variant="secondary" size="sm" onClick={() => shiftMonth(-1)} aria-label="Mes anterior">
-            ‹
+            <ChevronLeft className="size-4" aria-hidden="true" />
           </Button>
           <Button variant="secondary" size="sm" onClick={() => shiftMonth(1)} aria-label="Mes siguiente">
-            ›
+            <ChevronRight className="size-4" aria-hidden="true" />
           </Button>
           <Button variant="ghost" size="sm" onClick={goToToday}>
             Hoy
@@ -246,7 +254,8 @@ export function CalendarPage() {
               setIsFormOpen(true)
             }}
           >
-            + Evento este día
+            <Plus className="size-4" aria-hidden="true" />
+            Evento este día
           </Button>
         </div>
 
@@ -257,7 +266,7 @@ export function CalendarPage() {
             {selectedEvents.map((event) => (
               <li
                 key={event.id}
-                className="flex items-start justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-800"
+                className="flex items-start justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/60"
               >
                 <div className="flex flex-col gap-1">
                   <div className="flex flex-wrap items-center gap-2">
@@ -270,7 +279,10 @@ export function CalendarPage() {
                     {householdLabel(event) && <Badge tone="violet">{householdLabel(event)}</Badge>}
                   </div>
                   {event.location && (
-                    <span className="text-xs text-slate-500 dark:text-slate-400">📍 {event.location}</span>
+                    <span className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+                      <MapPin className="size-3.5" aria-hidden="true" />
+                      {event.location}
+                    </span>
                   )}
                   {event.description && (
                     <span className="text-xs text-slate-500 dark:text-slate-400">{event.description}</span>
@@ -280,15 +292,16 @@ export function CalendarPage() {
                   <Button
                     size="sm"
                     variant="ghost"
+                    aria-label="Editar evento"
                     onClick={() => {
                       setEditingEvent(event)
                       setIsFormOpen(true)
                     }}
                   >
-                    Editar
+                    <Pencil className="size-4" aria-hidden="true" />
                   </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setDeletingEvent(event)}>
-                    Eliminar
+                  <Button size="sm" variant="ghost" aria-label="Eliminar evento" onClick={() => setDeletingEvent(event)}>
+                    <Trash2 className="size-4" aria-hidden="true" />
                   </Button>
                 </div>
               </li>

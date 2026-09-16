@@ -1,3 +1,5 @@
+import { Check, Pencil, Trash2 } from "lucide-react"
+
 import { Badge } from "@/components/ui/Badge"
 import type { Category } from "@/types/category"
 import type { Household } from "@/types/household"
@@ -22,21 +24,17 @@ export function TaskItem({ task, categories, households, onToggleComplete, onSet
   const completed = task.status === "completed"
 
   return (
-    <li className="flex items-start gap-3 border-b border-slate-100 py-3 last:border-0 dark:border-slate-800">
+    <li className="group flex items-start gap-3 rounded-lg border-b border-slate-100 px-2 py-3 transition-colors last:border-0 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/60">
       <button
         type="button"
         role="checkbox"
         aria-checked={completed}
         aria-label={completed ? "Marcar como pendiente" : "Marcar como completada"}
         onClick={() => onToggleComplete(task)}
-        className="focus-ring mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border-2 border-slate-300 text-white transition-colors data-[checked=true]:border-brand-600 data-[checked=true]:bg-brand-600 dark:border-slate-600"
+        className="focus-ring mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border-2 border-slate-300 text-white transition-all data-[checked=true]:scale-100 data-[checked=true]:border-brand-600 data-[checked=true]:bg-brand-600 dark:border-slate-600"
         data-checked={completed}
       >
-        {completed && (
-          <svg viewBox="0 0 16 16" className="size-3" fill="currentColor" aria-hidden="true">
-            <path d="M13.7 3.7 6 11.4 2.3 7.7 3.7 6.3 6 8.6l6.3-6.3z" />
-          </svg>
-        )}
+        {completed && <Check className="size-3" aria-hidden="true" />}
       </button>
 
       <div className="min-w-0 flex-1">
@@ -65,10 +63,20 @@ export function TaskItem({ task, categories, households, onToggleComplete, onSet
               Marcar en progreso
             </button>
           )}
-          <button type="button" onClick={() => onEdit(task)} className="focus-ring font-medium hover:text-slate-600 dark:hover:text-slate-300">
+          <button
+            type="button"
+            onClick={() => onEdit(task)}
+            className="focus-ring flex items-center gap-1 font-medium hover:text-slate-600 dark:hover:text-slate-300"
+          >
+            <Pencil className="size-3.5" aria-hidden="true" />
             Editar
           </button>
-          <button type="button" onClick={() => onDelete(task)} className="focus-ring font-medium hover:text-red-600 dark:hover:text-red-400">
+          <button
+            type="button"
+            onClick={() => onDelete(task)}
+            className="focus-ring flex items-center gap-1 font-medium hover:text-red-600 dark:hover:text-red-400"
+          >
+            <Trash2 className="size-3.5" aria-hidden="true" />
             Eliminar
           </button>
         </div>

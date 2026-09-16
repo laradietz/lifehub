@@ -15,6 +15,50 @@
   --color-brand-700: #472bd0;
   --color-brand-800: #3a25a8;
   --color-brand-900: #302184;
+
+  /* Microinteracciones: sutiles a propósito (200-250ms, sin rebote exagerado)
+     para que la app se sienta viva sin parecer una demo llena de efectos. */
+  --animate-fade-in: fade-in 0.2s ease-out;
+  --animate-modal-in: modal-in 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-toast-in: toast-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes modal-in {
+    from {
+      opacity: 0;
+      transform: scale(0.96) translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(-8px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
 }
 
 :root {

@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react"
+import { ArrowDownAZ, ArrowUpAZ, Plus, Receipt, Wallet } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
 
 import { ExpenseCategoryChart } from "@/components/charts/ExpenseCategoryChart"
 import { IncomeExpenseTrendChart } from "@/components/charts/IncomeExpenseTrendChart"
@@ -6,17 +7,21 @@ import { Badge } from "@/components/ui/Badge"
 import { Button } from "@/components/ui/Button"
 import { Card } from "@/components/ui/Card"
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog"
+import { SearchInput } from "@/components/ui/SearchInput"
 import { Skeleton } from "@/components/ui/Skeleton"
 import { useCategories } from "@/hooks/useCategories"
 import { expenseService } from "@/services/expenseService"
 import { financeService } from "@/services/financeService"
+import { extractErrorMessage } from "@/services/api"
 import { incomeService } from "@/services/incomeService"
 import { TransactionFormModal } from "@/pages/finance/TransactionFormModal"
 import { TransactionItem } from "@/pages/finance/TransactionItem"
+import { toast } from "@/store/toastStore"
 import type { Expense, FinanceSummary, Income, TransactionPayload } from "@/types/finance"
 import { formatCompactCurrency, formatCurrency } from "@/utils/currency"
 
 type Kind = "income" | "expense"
+type SortKey = "date" | "amount"
 
 function StatTile({
   label,
@@ -56,6 +61,9 @@ export function FinancePage() {
   const [incomes, setIncomes] = useState<Income[]>([])
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [isLoadingList, setIsLoadingList] = useState(true)
+  const [search, setSearch] = useState("")
+  const [sortKey, setSortKey] = useState<SortKey>("date")
+  const [sortAsc, setSortAsc] = useState(false)
 
   const expenseCategories = useCategories("expense")
   const incomeCategories = useCategories("income")
@@ -91,6 +99,7 @@ export function FinancePage() {
   }, [])
 
   async function handleSubmit(payload: TransactionPayload) {
+    const isEditing = Boolean(editingTransaction)
     if (kind === "income") {
       if (editingTransaction) {
         await incomeService.update(editingTransaction.id, payload)
@@ -104,6 +113,13 @@ export function FinancePage() {
         await expenseService.create(payload)
       }
     }
+    toast.success(
+      isEditing
+        ? "Movimiento actualizado."
+        : kind === "income"
+          ? "Ingreso registrado."
+          : "Gasto registrado.",
+    )
     await Promise.all([loadSummary(), loadLists()])
   }
 
@@ -117,15 +133,47 @@ export function FinancePage() {
         await expenseService.remove(deletingTransaction.id)
       }
       setDeletingTransaction(null)
+      toast.success("Movimiento eliminado.")
       await Promise.all([loadSummary(), loadLists()])
+    } catch (err) {
+      toast.error(extractErrorMessage(err, "No pudimos eliminar el movimiento."))
     } finally {
       setIsDeleting(false)
+    }
+  }
+
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortAsc((current) => !current)
+    } else {
+      setSortKey(key)
+      setSortAsc(false)
     }
   }
 
   const list = kind === "income" ? incomes : expenses
   const categories = kind === "income" ? incomeCategories.categories : expenseCategories.categories
   const currency = summary?.currency ?? "USD"
+
+  const visibleList = useMemo(() => {
+    const query = search.trim().toLowerCase()
+    const filtered = query
+      ? list.filter((transaction) => {
+          const category = categories.find((item) => item.id === transaction.category_id)
+          return (
+            transaction.description?.toLowerCase().includes(query) || category?.name.toLowerCase().includes(query)
+          )
+        })
+      : list
+    const sorted = [...filtered].sort((a, b) => {
+      const diff =
+        sortKey === "amount"
+          ? Number.parseFloat(a.amount) - Number.parseFloat(b.amount)
+          : new Date(a.date).getTime() - new Date(b.date).getTime()
+      return sortAsc ? diff : -diff
+    })
+    return sorted
+  }, [list, categories, search, sortKey, sortAsc])
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6">
@@ -140,6 +188,7 @@ export function FinancePage() {
             setIsFormOpen(true)
           }}
         >
+          <Plus className="size-4" aria-hidden="true" />
           {kind === "income" ? "Nuevo ingreso" : "Nuevo gasto"}
         </Button>
       </div>
@@ -196,21 +245,42 @@ export function FinancePage() {
         </Card>
       </div>
 
-      <div className="flex gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-900" style={{ width: "fit-content" }}>
-        {(["expense", "income"] as Kind[]).map((option) => (
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-900" style={{ width: "fit-content" }}>
+          {(["expense", "income"] as Kind[]).map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => setKind(option)}
+              className={`focus-ring rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
+                kind === option
+                  ? "bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-slate-100"
+                  : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+              }`}
+            >
+              {option === "expense" ? "Gastos" : "Ingresos"}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-2">
           <button
-            key={option}
             type="button"
-            onClick={() => setKind(option)}
-            className={`focus-ring rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
-              kind === option
-                ? "bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-slate-100"
-                : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-            }`}
+            onClick={() => toggleSort("date")}
+            className={`focus-ring flex items-center gap-1 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${sortKey === "date" ? "border-brand-200 bg-brand-50 text-brand-700 dark:border-brand-900 dark:bg-brand-950/60 dark:text-brand-300" : "border-slate-200 text-slate-500 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"}`}
           >
-            {option === "expense" ? "Gastos" : "Ingresos"}
+            Fecha
+            {sortKey === "date" && (sortAsc ? <ArrowUpAZ className="size-3.5" /> : <ArrowDownAZ className="size-3.5" />)}
           </button>
-        ))}
+          <button
+            type="button"
+            onClick={() => toggleSort("amount")}
+            className={`focus-ring flex items-center gap-1 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${sortKey === "amount" ? "border-brand-200 bg-brand-50 text-brand-700 dark:border-brand-900 dark:bg-brand-950/60 dark:text-brand-300" : "border-slate-200 text-slate-500 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"}`}
+          >
+            Monto
+            {sortKey === "amount" && (sortAsc ? <ArrowUpAZ className="size-3.5" /> : <ArrowDownAZ className="size-3.5" />)}
+          </button>
+          <SearchInput value={search} onChange={setSearch} placeholder="Buscar..." className="w-40 sm:w-56" />
+        </div>
       </div>
 
       <Card className="px-5 py-2">
@@ -222,14 +292,20 @@ export function FinancePage() {
           </div>
         ) : list.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-14 text-center">
-            <span className="text-2xl">{kind === "income" ? "💰" : "🧾"}</span>
+            <span className="flex size-12 items-center justify-center rounded-full bg-brand-50 text-brand-500 dark:bg-brand-950/60 dark:text-brand-300">
+              {kind === "income" ? <Wallet className="size-6" aria-hidden="true" /> : <Receipt className="size-6" aria-hidden="true" />}
+            </span>
             <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
               {kind === "income" ? "No registraste ingresos todavía" : "No registraste gastos todavía"}
             </p>
           </div>
+        ) : visibleList.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 py-14 text-center">
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Ningún movimiento coincide con "{search}"</p>
+          </div>
         ) : (
           <ul>
-            {list.map((transaction) => (
+            {visibleList.map((transaction) => (
               <TransactionItem
                 key={transaction.id}
                 transaction={transaction}

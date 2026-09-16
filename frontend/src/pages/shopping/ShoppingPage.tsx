@@ -1,3 +1,4 @@
+import { Plus, ShoppingCart, Trash2 } from "lucide-react"
 import { type FormEvent, useEffect, useState } from "react"
 
 import { Badge } from "@/components/ui/Badge"
@@ -13,6 +14,7 @@ import { ShoppingSuggestions } from "@/pages/shopping/ShoppingSuggestions"
 import { extractErrorMessage } from "@/services/api"
 import { shoppingService } from "@/services/shoppingService"
 import { useAuthStore } from "@/store/authStore"
+import { toast } from "@/store/toastStore"
 import type { ShoppingItem, ShoppingList, ShoppingListPayload, ShoppingSuggestion } from "@/types/shopping"
 
 export function ShoppingPage() {
@@ -67,6 +69,7 @@ export function ShoppingPage() {
 
   async function handleCreateList(payload: ShoppingListPayload) {
     const created = await shoppingService.createList(payload)
+    toast.success("Lista creada.")
     await loadLists()
     setSelectedListId(created.id)
   }
@@ -78,7 +81,10 @@ export function ShoppingPage() {
       await shoppingService.removeList(selectedList.id)
       setSelectedListId(null)
       setIsDeleteConfirmOpen(false)
+      toast.success("Lista eliminada.")
       await loadLists()
+    } catch (err) {
+      toast.error(extractErrorMessage(err, "No pudimos eliminar la lista."))
     } finally {
       setIsDeletingList(false)
     }
@@ -92,6 +98,8 @@ export function ShoppingPage() {
       await shoppingService.addItem(selectedList.id, { name: newItemName.trim() })
       setNewItemName("")
       await loadLists()
+    } catch (err) {
+      toast.error(extractErrorMessage(err, "No pudimos agregar el ítem."))
     } finally {
       setIsAddingItem(false)
     }
@@ -122,7 +130,10 @@ export function ShoppingPage() {
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Compras</h1>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Listas personales y compartidas con tu hogar.</p>
         </div>
-        <Button onClick={() => setIsFormOpen(true)}>Nueva lista</Button>
+        <Button onClick={() => setIsFormOpen(true)}>
+          <Plus className="size-4" aria-hidden="true" />
+          Nueva lista
+        </Button>
       </div>
 
       {isLoading ? (
@@ -131,7 +142,9 @@ export function ShoppingPage() {
         <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
       ) : lists.length === 0 ? (
         <Card className="flex flex-col items-center gap-2 px-5 py-14 text-center">
-          <span className="text-2xl">🛒</span>
+          <span className="flex size-12 items-center justify-center rounded-full bg-brand-50 text-brand-500 dark:bg-brand-950/60 dark:text-brand-300">
+            <ShoppingCart className="size-6" aria-hidden="true" />
+          </span>
           <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Todavía no tenés listas</p>
           <p className="text-sm text-slate-500 dark:text-slate-400">Creá tu primera lista de compras para empezar.</p>
         </Card>
@@ -167,8 +180,9 @@ export function ShoppingPage() {
                   <button
                     type="button"
                     onClick={() => setIsDeleteConfirmOpen(true)}
-                    className="focus-ring text-xs font-medium text-red-600 hover:text-red-700 dark:text-red-400"
+                    className="focus-ring flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700 dark:text-red-400"
                   >
+                    <Trash2 className="size-3.5" aria-hidden="true" />
                     Eliminar lista
                   </button>
                 )}

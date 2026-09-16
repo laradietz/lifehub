@@ -1,7 +1,12 @@
 import "@testing-library/jest-dom/vitest"
 
 import { cleanup } from "@testing-library/react"
-import { afterEach } from "vitest"
+import { toHaveNoViolations } from "jest-axe"
+import { afterEach, expect } from "vitest"
+
+// jest-axe esta pensado para Jest, pero el matcher en si no depende de nada
+// especifico de Jest -- se puede registrar en el `expect` de Vitest igual.
+expect.extend(toHaveNoViolations)
 
 afterEach(() => {
   cleanup()

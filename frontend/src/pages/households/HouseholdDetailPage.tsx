@@ -1,3 +1,4 @@
+import { ArrowLeft, UserPlus } from "lucide-react"
 import { type FormEvent, useEffect, useState } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
 
@@ -12,6 +13,7 @@ import { MemberRow } from "@/pages/households/MemberRow"
 import { extractErrorMessage } from "@/services/api"
 import { householdService } from "@/services/householdService"
 import { useAuthStore } from "@/store/authStore"
+import { toast } from "@/store/toastStore"
 import type { Household, HouseholdMember, HouseholdPayload } from "@/types/household"
 
 export function HouseholdDetailPage() {
@@ -64,6 +66,7 @@ export function HouseholdDetailPage() {
     try {
       await householdService.invite(id, { email: inviteEmail })
       setInviteEmail("")
+      toast.success("Invitación enviada.")
       await load()
     } catch (err) {
       setInviteError(extractErrorMessage(err, "No pudimos enviar la invitación."))
@@ -75,6 +78,7 @@ export function HouseholdDetailPage() {
   async function handleRename(payload: HouseholdPayload) {
     if (!id) return
     await householdService.update(id, payload)
+    toast.success("Hogar renombrado.")
     await load()
   }
 
@@ -83,7 +87,10 @@ export function HouseholdDetailPage() {
     setIsDeleting(true)
     try {
       await householdService.remove(id)
+      toast.success("Hogar eliminado.")
       navigate("/households")
+    } catch (err) {
+      toast.error(extractErrorMessage(err, "No pudimos eliminar el hogar."))
     } finally {
       setIsDeleting(false)
     }
@@ -94,7 +101,10 @@ export function HouseholdDetailPage() {
     setIsLeaving(true)
     try {
       await householdService.leave(id)
+      toast.success("Abandonaste el hogar.")
       navigate("/households")
+    } catch (err) {
+      toast.error(extractErrorMessage(err, "No pudimos abandonar el hogar."))
     } finally {
       setIsLeaving(false)
     }
@@ -106,7 +116,10 @@ export function HouseholdDetailPage() {
     try {
       await householdService.removeMember(id, removingMember.id)
       setRemovingMember(null)
+      toast.success("Miembro quitado del hogar.")
       await load()
+    } catch (err) {
+      toast.error(extractErrorMessage(err, "No pudimos quitar al miembro."))
     } finally {
       setIsRemovingMember(false)
     }
@@ -124,8 +137,9 @@ export function HouseholdDetailPage() {
   if (loadError || !household) {
     return (
       <div className="mx-auto flex max-w-3xl flex-col gap-4">
-        <Link to="/households" className="focus-ring text-sm font-medium text-brand-600 dark:text-brand-400">
-          ← Volver a Hogar
+        <Link to="/households" className="focus-ring flex items-center gap-1 text-sm font-medium text-brand-600 dark:text-brand-400">
+          <ArrowLeft className="size-3.5" aria-hidden="true" />
+          Volver a Hogar
         </Link>
         <Alert variant="error">{loadError ?? "Hogar no encontrado."}</Alert>
       </div>
@@ -135,8 +149,9 @@ export function HouseholdDetailPage() {
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
       <div>
-        <Link to="/households" className="focus-ring text-sm font-medium text-brand-600 dark:text-brand-400">
-          ← Volver a Hogar
+        <Link to="/households" className="focus-ring flex items-center gap-1 text-sm font-medium text-brand-600 dark:text-brand-400">
+          <ArrowLeft className="size-3.5" aria-hidden="true" />
+          Volver a Hogar
         </Link>
         <div className="mt-2 flex items-center justify-between gap-4">
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{household.name}</h1>
@@ -179,6 +194,7 @@ export function HouseholdDetailPage() {
               />
             </div>
             <Button type="submit" isLoading={isInviting}>
+              <UserPlus className="size-4" aria-hidden="true" />
               Invitar
             </Button>
           </form>

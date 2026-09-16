@@ -1,8 +1,10 @@
+import { Download, Paperclip, Pencil, Trash2, Upload, X } from "lucide-react"
 import { type ChangeEvent, useRef, useState } from "react"
 
 import { Badge } from "@/components/ui/Badge"
 import { extractErrorMessage } from "@/services/api"
 import { documentService } from "@/services/documentService"
+import { toast } from "@/store/toastStore"
 import type { Document } from "@/types/document"
 import { daysUntil, formatDate } from "@/utils/taskMeta"
 import { DOCUMENT_CATEGORY_LABEL, formatFileSize } from "@/utils/documentMeta"
@@ -37,6 +39,7 @@ export function DocumentItem({ document, onEdit, onDelete, onChanged }: Document
     setError(null)
     try {
       await documentService.uploadFile(document.id, file)
+      toast.success("Archivo subido.")
       onChanged()
     } catch (err) {
       setError(extractErrorMessage(err, "No pudimos subir el archivo."))
@@ -50,6 +53,7 @@ export function DocumentItem({ document, onEdit, onDelete, onChanged }: Document
     setError(null)
     try {
       await documentService.removeFile(document.id)
+      toast.success("Archivo quitado.")
       onChanged()
     } catch (err) {
       setError(extractErrorMessage(err, "No pudimos quitar el archivo."))
@@ -68,7 +72,7 @@ export function DocumentItem({ document, onEdit, onDelete, onChanged }: Document
   }
 
   return (
-    <li className="flex flex-col gap-2 border-b border-slate-100 py-3 last:border-0 dark:border-slate-800">
+    <li className="flex flex-col gap-2 rounded-lg border-b border-slate-100 px-2 py-3 transition-colors last:border-0 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/60">
       <div className="flex flex-wrap items-center gap-2">
         <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{document.name}</p>
         <Badge tone="slate">{DOCUMENT_CATEGORY_LABEL[document.category]}</Badge>
@@ -94,19 +98,26 @@ export function DocumentItem({ document, onEdit, onDelete, onChanged }: Document
       <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400 dark:text-slate-500">
         {document.file_name ? (
           <>
-            <span className="text-slate-600 dark:text-slate-300">
-              📎 {document.file_name}
+            <span className="flex items-center gap-1 text-slate-600 dark:text-slate-300">
+              <Paperclip className="size-3.5" aria-hidden="true" />
+              {document.file_name}
               {document.file_size !== null && ` (${formatFileSize(document.file_size)})`}
             </span>
-            <button type="button" onClick={() => void handleDownload()} className="focus-ring font-medium hover:text-slate-600 dark:hover:text-slate-300">
+            <button
+              type="button"
+              onClick={() => void handleDownload()}
+              className="focus-ring flex items-center gap-1 font-medium hover:text-slate-600 dark:hover:text-slate-300"
+            >
+              <Download className="size-3.5" aria-hidden="true" />
               Descargar
             </button>
             <button
               type="button"
               disabled={isUploading}
               onClick={() => void handleRemoveFile()}
-              className="focus-ring font-medium hover:text-red-600 disabled:opacity-50 dark:hover:text-red-400"
+              className="focus-ring flex items-center gap-1 font-medium hover:text-red-600 disabled:opacity-50 dark:hover:text-red-400"
             >
+              <X className="size-3.5" aria-hidden="true" />
               Quitar archivo
             </button>
           </>
@@ -115,17 +126,28 @@ export function DocumentItem({ document, onEdit, onDelete, onChanged }: Document
             type="button"
             disabled={isUploading}
             onClick={() => fileInputRef.current?.click()}
-            className="focus-ring font-medium hover:text-slate-600 disabled:opacity-50 dark:hover:text-slate-300"
+            className="focus-ring flex items-center gap-1 font-medium hover:text-slate-600 disabled:opacity-50 dark:hover:text-slate-300"
           >
+            <Upload className="size-3.5" aria-hidden="true" />
             {isUploading ? "Subiendo…" : "Adjuntar archivo"}
           </button>
         )}
         <input ref={fileInputRef} type="file" className="hidden" onChange={(event) => void handleFileSelected(event)} />
 
-        <button type="button" onClick={() => onEdit(document)} className="focus-ring font-medium hover:text-slate-600 dark:hover:text-slate-300">
+        <button
+          type="button"
+          onClick={() => onEdit(document)}
+          className="focus-ring flex items-center gap-1 font-medium hover:text-slate-600 dark:hover:text-slate-300"
+        >
+          <Pencil className="size-3.5" aria-hidden="true" />
           Editar
         </button>
-        <button type="button" onClick={() => onDelete(document)} className="focus-ring font-medium hover:text-red-600 dark:hover:text-red-400">
+        <button
+          type="button"
+          onClick={() => onDelete(document)}
+          className="focus-ring flex items-center gap-1 font-medium hover:text-red-600 dark:hover:text-red-400"
+        >
+          <Trash2 className="size-3.5" aria-hidden="true" />
           Eliminar
         </button>
       </div>
