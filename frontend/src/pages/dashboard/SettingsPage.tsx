@@ -9,6 +9,8 @@ import { extractErrorMessage } from "@/services/api"
 import { authService } from "@/services/authService"
 import { settingsService } from "@/services/settingsService"
 import { useAuthStore } from "@/store/authStore"
+import { cn } from "@/utils/cn"
+import { setTheme, type Theme } from "@/utils/theme"
 
 const CURRENCY_OPTIONS = [
   { code: "USD", label: "USD — Dólar estadounidense" },
@@ -18,6 +20,12 @@ const CURRENCY_OPTIONS = [
   { code: "CLP", label: "CLP — Peso chileno" },
   { code: "COP", label: "COP — Peso colombiano" },
   { code: "BRL", label: "BRL — Real brasileño" },
+]
+
+const THEME_OPTIONS: { value: Theme; label: string; icon: string }[] = [
+  { value: "light", label: "Claro", icon: "☀️" },
+  { value: "dark", label: "Oscuro", icon: "🌙" },
+  { value: "system", label: "Sistema", icon: "💻" },
 ]
 
 const WIDGET_OPTIONS = [
@@ -38,6 +46,7 @@ export function SettingsPage() {
 
   const [widgets, setWidgets] = useState<string[]>([])
   const [currency, setCurrency] = useState("USD")
+  const [theme, setThemeState] = useState<Theme>("system")
   const [isLoadingWidgets, setIsLoadingWidgets] = useState(true)
   const [widgetsError, setWidgetsError] = useState<string | null>(null)
 
@@ -48,6 +57,7 @@ export function SettingsPage() {
         const settings = await settingsService.get()
         setWidgets(settings.dashboard_widgets)
         setCurrency(settings.currency)
+        setThemeState(settings.theme)
       } catch (err) {
         setWidgetsError(extractErrorMessage(err, "No pudimos cargar tu configuración del dashboard."))
       } finally {
@@ -65,6 +75,19 @@ export function SettingsPage() {
     } catch (err) {
       setCurrency(previous)
       setWidgetsError(extractErrorMessage(err, "No pudimos guardar la moneda."))
+    }
+  }
+
+  async function handleThemeChange(nextTheme: Theme) {
+    const previous = theme
+    setThemeState(nextTheme)
+    setTheme(nextTheme)
+    try {
+      await settingsService.update({ theme: nextTheme })
+    } catch (err) {
+      setThemeState(previous)
+      setTheme(previous)
+      setWidgetsError(extractErrorMessage(err, "No pudimos guardar el tema."))
     }
   }
 
@@ -141,6 +164,33 @@ export function SettingsPage() {
               </option>
             ))}
           </Select>
+        </div>
+      </Card>
+
+      <Card className="p-6">
+        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Apariencia</h2>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Elegí cómo se ve LifeHub en este dispositivo.</p>
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          {THEME_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              disabled={isLoadingWidgets}
+              aria-pressed={theme === option.value}
+              onClick={() => void handleThemeChange(option.value)}
+              className={cn(
+                "focus-ring flex flex-col items-center gap-1 rounded-lg border px-3 py-3 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60",
+                theme === option.value
+                  ? "border-brand-500 bg-brand-50 text-brand-700 dark:border-brand-400 dark:bg-brand-950/40 dark:text-brand-300"
+                  : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800",
+              )}
+            >
+              <span aria-hidden="true" className="text-lg">
+                {option.icon}
+              </span>
+              {option.label}
+            </button>
+          ))}
         </div>
       </Card>
 

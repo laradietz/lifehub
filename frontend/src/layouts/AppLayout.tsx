@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { NavLink, Outlet } from "react-router-dom"
 
 import { NotificationBell } from "@/components/NotificationBell"
@@ -50,6 +50,19 @@ export function AppLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const user = useAuthStore((state) => state.user)
   const logout = useAuthStore((state) => state.logout)
+  const menuButtonRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    if (!mobileNavOpen) return
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setMobileNavOpen(false)
+        menuButtonRef.current?.focus()
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown)
+    return () => document.removeEventListener("keydown", handleKeyDown)
+  }, [mobileNavOpen])
 
   return (
     <div className="min-h-dvh bg-slate-50 dark:bg-slate-950">
@@ -101,8 +114,10 @@ export function AppLayout() {
       <div className="flex min-h-dvh flex-col lg:pl-64">
         <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 dark:border-slate-800 dark:bg-slate-900 sm:px-6 lg:justify-end">
           <button
+            ref={menuButtonRef}
             type="button"
             aria-label="Abrir menú"
+            aria-expanded={mobileNavOpen}
             onClick={() => setMobileNavOpen(true)}
             className="focus-ring rounded-md p-1.5 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 lg:hidden"
           >

@@ -13,6 +13,7 @@ import { DocumentsPage } from "@/pages/documents/DocumentsPage"
 import { FinancePage } from "@/pages/finance/FinancePage"
 import { HouseholdDetailPage } from "@/pages/households/HouseholdDetailPage"
 import { HouseholdsPage } from "@/pages/households/HouseholdsPage"
+import { useThemeSync } from "@/hooks/useThemeSync"
 import { NotFoundPage } from "@/pages/NotFoundPage"
 import { RemindersPage } from "@/pages/reminders/RemindersPage"
 import { ShoppingPage } from "@/pages/shopping/ShoppingPage"
@@ -29,6 +30,8 @@ export default function App() {
   useEffect(() => {
     void loadCurrentUser()
   }, [loadCurrentUser])
+
+  useThemeSync()
 
   return (
     <Routes>

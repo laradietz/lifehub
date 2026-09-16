@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import { notificationService } from "@/services/notificationService"
 import type { Notification, NotificationType } from "@/types/notification"
@@ -23,6 +23,19 @@ export function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
+  const bellButtonRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    if (!isOpen) return
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsOpen(false)
+        bellButtonRef.current?.focus()
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown)
+    return () => document.removeEventListener("keydown", handleKeyDown)
+  }, [isOpen])
 
   async function loadUnreadCount() {
     try {
@@ -76,8 +89,10 @@ export function NotificationBell() {
   return (
     <div className="relative">
       <button
+        ref={bellButtonRef}
         type="button"
         aria-label="Notificaciones"
+        aria-expanded={isOpen}
         onClick={() => (isOpen ? setIsOpen(false) : void openPanel())}
         className="focus-ring relative flex size-9 items-center justify-center rounded-full text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
       >
@@ -121,7 +136,7 @@ export function NotificationBell() {
                         type="button"
                         onClick={() => void handleMarkRead(notification)}
                         className={cn(
-                          "flex w-full flex-col gap-0.5 px-4 py-2.5 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-800",
+                          "focus-ring flex w-full flex-col gap-0.5 px-4 py-2.5 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-800",
                           !notification.is_read && "bg-brand-50/60 dark:bg-brand-950/20",
                         )}
                       >
