@@ -1,4 +1,10 @@
+import os
 from collections.abc import Generator
+
+# Debe fijarse antes de importar app.core.config (que lee el entorno al importarse):
+# sin esto, el scheduler de notificaciones (Fase 8) arrancaria un hilo de fondo real
+# contra la base de datos de test en cada test que use el fixture `client`.
+os.environ.setdefault("SCHEDULER_ENABLED", "false")
 
 import pytest
 from fastapi.testclient import TestClient

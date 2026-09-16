@@ -10,6 +10,7 @@ bcrypt==4.2.1
 pyjwt==2.10.1
 python-multipart==0.0.20
 boto3==1.35.74
+apscheduler==3.10.4
 pytest==8.3.4
 pytest-cov==6.0.0
 httpx==0.28.1

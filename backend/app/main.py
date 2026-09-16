@@ -1,5 +1,7 @@
 from contextlib import asynccontextmanager
+from datetime import datetime
 
+from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -8,15 +10,31 @@ from app.core.config import settings
 from app.core.logging import setup_logging
 from app.db.base import Base  # noqa: F401  (registra todos los modelos antes de configurar los mappers)
 from app.middleware.error_handler import register_exception_handlers
+from app.services.notification_dispatch_service import run_notification_dispatch
 from app.services.storage_service import get_storage_service
 
 setup_logging()
+
+scheduler = BackgroundScheduler()
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     get_storage_service().ensure_bucket()
+    if settings.SCHEDULER_ENABLED:
+        # SCHEDULER_ENABLED=false en tests (ver conftest.py) para que la suite no
+        # dispare chequeos reales contra la base de datos de test en un hilo de fondo.
+        scheduler.add_job(
+            run_notification_dispatch,
+            "interval",
+            minutes=settings.NOTIFICATION_CHECK_INTERVAL_MINUTES,
+            next_run_time=datetime.now(),
+            id="notification_dispatch",
+        )
+        scheduler.start()
     yield
+    if settings.SCHEDULER_ENABLED and scheduler.running:
+        scheduler.shutdown(wait=False)
 
 
 app = FastAPI(

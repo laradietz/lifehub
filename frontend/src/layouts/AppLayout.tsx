@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { NavLink, Outlet } from "react-router-dom"
 
+import { NotificationBell } from "@/components/NotificationBell"
 import { Logo } from "@/components/ui/Logo"
 import { useAuthStore } from "@/store/authStore"
 import { cn } from "@/utils/cn"
@@ -107,13 +108,16 @@ export function AppLayout() {
           >
             ☰
           </button>
-          <div className="flex items-center gap-2.5">
-            <div className="flex size-8 items-center justify-center rounded-full bg-brand-100 text-sm font-semibold text-brand-700 dark:bg-brand-900 dark:text-brand-200">
-              {(user?.full_name ?? user?.email ?? "?").charAt(0).toUpperCase()}
+          <div className="flex items-center gap-2">
+            <NotificationBell />
+            <div className="flex items-center gap-2.5">
+              <div className="flex size-8 items-center justify-center rounded-full bg-brand-100 text-sm font-semibold text-brand-700 dark:bg-brand-900 dark:text-brand-200">
+                {(user?.full_name ?? user?.email ?? "?").charAt(0).toUpperCase()}
+              </div>
+              <span className="hidden text-sm font-medium text-slate-700 dark:text-slate-200 sm:inline">
+                {user?.full_name ?? user?.email}
+              </span>
             </div>
-            <span className="hidden text-sm font-medium text-slate-700 dark:text-slate-200 sm:inline">
-              {user?.full_name ?? user?.email}
-            </span>
           </div>
         </header>
 

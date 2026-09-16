@@ -47,6 +47,8 @@ class NotificationType(str, enum.Enum):
     SUBSCRIPTION = "subscription"
     EVENT = "event"
     SYSTEM = "system"
+    DOCUMENT = "document"
+    VEHICLE = "vehicle"
 
 
 class HouseholdRole(str, enum.Enum):

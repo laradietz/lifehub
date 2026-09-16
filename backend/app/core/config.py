@@ -31,6 +31,12 @@ class Settings(BaseSettings):
 
     MAX_UPLOAD_SIZE_MB: int = 10
 
+    # Fase 8 (Notificaciones): worker en el mismo contenedor backend (APScheduler),
+    # sin servicio aparte. Se desactiva en tests (ver conftest.py) para que la suite
+    # no dispare chequeos reales contra la base de datos de test en un hilo de fondo.
+    SCHEDULER_ENABLED: bool = True
+    NOTIFICATION_CHECK_INTERVAL_MINUTES: int = 15
+
     # Almacenamiento de archivos (Fase 5): bucket S3-compatible, MinIO en desarrollo.
     # S3_ENDPOINT_URL es la direccion INTERNA (red de Docker) que usa el backend para hablar
     # con el storage. Los archivos nunca se sirven con URLs firmadas directas al navegador:
