@@ -1,14 +1,16 @@
-# LifeHub
+# Vida En Orden
 
 Panel de control personal para organizar tareas, finanzas, compras, vencimientos, documentos, vehículos y más, todo en un solo lugar.
 
+> El proyecto se llamaba **LifeHub**; el nombre visible cambió a **Vida En Orden**. El repositorio, la carpeta local, los nombres de servicios/volúmenes de Docker y los valores por defecto de variables de entorno se dejaron como `lifehub` a propósito, para no romper nada que dependa de esas rutas/identificadores técnicos.
+
 > **Estado actual: Fase 11 completada.** Arquitectura, base de datos, autenticación (con recuperación de contraseña por código), dashboard configurable, tareas, recordatorios/vencimientos, finanzas personales, suscripciones, compras inteligentes, hogares multi-usuario, documentos/vehículos, calendario, notificaciones (in-app + email), dark mode real, tests automatizados (backend + frontend) y empaquetado de producción funcionando de punta a punta. La Fase 7 (asistente de IA) se descartó a pedido del usuario. Ver [Roadmap](#roadmap).
 
-## Why LifeHub?
+## Why Vida En Orden?
 
 Organizar la vida cotidiana hoy implica saltar entre una app de notas, el home banking, una lista de compras en el celular, recordatorios sueltos y un calendario que nunca está del todo actualizado. Nada conversa entre sí, así que las cosas se olvidan: una suscripción que se cobra sin que la esperes, un seguro que vence, una compra que se repite todas las semanas sin que nadie lo note.
 
-LifeHub existe para bajar esa carga mental: un único panel que responde preguntas simples como *"¿qué tengo que hacer hoy?"*, *"¿en qué gasté este mes?"* y *"¿qué está por vencer?"* — sin abrir cinco aplicaciones distintas.
+Vida En Orden existe para bajar esa carga mental: un único panel que responde preguntas simples como *"¿qué tengo que hacer hoy?"*, *"¿en qué gasté este mes?"* y *"¿qué está por vencer?"* — sin abrir cinco aplicaciones distintas.
 
 ## Funcionalidades (Fases 1-6, 8-10)
 

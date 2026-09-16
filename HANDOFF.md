@@ -1,4 +1,4 @@
-# HANDOFF — LifeHub (documento de continuidad)
+# HANDOFF — Vida En Orden (documento de continuidad)
 
 > Generado el 2026-09-15, actualizado el 2026-09-16 tras completar la Fase 11 (última fase del plan original). Pegar este documento completo como primer mensaje en el chat nuevo. Cubre todo lo necesario para seguir el desarrollo sin releer la conversación anterior.
 >
@@ -8,7 +8,7 @@
 
 ## 1. Objetivo del proyecto
 
-**Qué es:** LifeHub, un panel de control personal ("todo en un solo lugar") para organizar tareas, finanzas, compras, vencimientos, documentos, vehículos y más.
+**Qué es:** Vida En Orden (el proyecto se llamaba LifeHub; ver nota de rename en sección 6), un panel de control personal ("todo en un solo lugar") para organizar tareas, finanzas, compras, vencimientos, documentos, vehículos y más.
 
 **Para quién:** Una persona (usuario final individual, no B2B) que quiere reducir la carga mental de organizar su vida cotidiana: qué tiene que hacer, qué tiene que pagar, qué está por vencer, cuánto gastó, qué tiene que comprar.
 
@@ -363,6 +363,7 @@ Ver sección 8 completa.
 24. **Notificaciones: el alcance son Recordatorios + Documentos + Vehículos + Eventos del Calendario**, no Tareas ni Suscripciones. Decisión explícita del usuario. `Reminder` usa su propio `advance_notice_days` (por-item, ya existía); Documentos/Vehículos/Eventos usan un umbral fijo `_DEFAULT_NOTICE_DAYS = (7, 1)` en `notification_dispatch_service.py` porque no tienen ese campo configurable. **No sumar Tareas/Suscripciones ni cambiar el umbral fijo sin que el usuario lo pida** -- son decisiones de producto, no defaults técnicos arbitrarios.
 25. **El tema (dark/light/system) se maneja con un módulo singleton (`frontend/src/utils/theme.ts`), no con un store de Zustand.** Decisión técnica de la Fase 9, consistente con el punto 11 (sin over-engineering, Zustand solo para auth): aplicar/leer la clase `.dark` del `<html>` es un efecto de DOM imperativo, no estado de React que algo necesite re-renderizar en base a él. `SettingsPage` sí mantiene su propio `useState<Theme>` local para pintar qué botón está seleccionado, igual que hace con moneda/widgets. **No migrar esto a un store global sin una razón concreta** (ej. que otro componente además de Configuración necesite leer el tema actual como estado reactivo de React, no solo aplicarlo al DOM).
 26. **El focus trap de `Modal.tsx` salta a propósito el botón "Cerrar" al decidir el foco inicial** (busca el primer elemento focuseable cuyo `aria-label` no sea `"Cerrar"`), aunque ese botón sea el primer nodo DOM focuseable del panel. Encontrado probando con teclado en la Fase 9: sin este salto, cada modal arranca con el foco en la X en vez de en el primer campo del formulario, forzando a cualquier usuario de teclado a tabear de más para empezar a escribir. **Si se agrega un botón nuevo antes de los campos del formulario en algún `*FormModal`,** revisar que este salto siga aterrizando en el lugar correcto.
+27. **El producto se renombró de "LifeHub" a "Vida En Orden" después de terminar las 11 fases originales**, a pedido explícito del usuario. Alcance del rename decidido con `AskUserQuestion`: **solo el nombre visible** (título de la UI, `<title>`/meta description del `index.html`, `Logo.tsx`, footer de `AuthLayout`, textos sueltos en Dashboard/Configuración, el email de invitación a un hogar, `PROJECT_NAME` en `config.py` que se ve en el título de Swagger, README/HANDOFF/LICENSE). **Deliberadamente NO se tocó** la carpeta local (`lifehub/`), el repo de GitHub (`laradietz/lifehub`), ni ningún identificador técnico en minúscula (`POSTGRES_DB=lifehub`, `S3_BUCKET_NAME=lifehub`, nombres de los loggers `"lifehub"`/`"lifehub.email"`/etc., nombres de volúmenes Docker `lifehub_pgdata`/`lifehub_minio_data`) — cambiar cualquiera de esos rompe cosas (rutas de esta sesión, volúmenes con datos ya creados, URLs de S3) sin ningún beneficio real, y el usuario no lo pidió. **Si se quiere ir más allá en el futuro** (renombrar el repo de GitHub, por ejemplo `gh repo rename`), es una decisión aparte que hay que volver a confirmar explícitamente, no asumirla por la relación obvia entre los nombres.
 
 ### Qué NO cambiar sin que el usuario lo pida
 - El esquema de tablas ya migrado (agregar columnas/tablas nuevas está bien vía Alembic; no renombrar/borrar lo existente).

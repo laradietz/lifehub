@@ -8,7 +8,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-    PROJECT_NAME: str = "LifeHub"
+    PROJECT_NAME: str = "Vida En Orden"
     API_V1_STR: str = "/api"
     ENVIRONMENT: str = "development"
 

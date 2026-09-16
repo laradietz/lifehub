@@ -121,7 +121,7 @@ class HouseholdService:
         self.email_service.send(
             target.email,
             f"Invitación a unirte al hogar «{household.name}»",
-            f"{household.name} te invitó a sumarte a su hogar en LifeHub. Entrá a la app para aceptar la invitación.",
+            f"{household.name} te invitó a sumarte a su hogar en Vida En Orden. Entrá a la app para aceptar la invitación.",
         )
 
         return _member_read(member, email=target.email, full_name=target.full_name)
