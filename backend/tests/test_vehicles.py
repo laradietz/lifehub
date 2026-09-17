@@ -12,6 +12,25 @@ def test_create_and_list_vehicle(client, auth_headers):
     assert len(listing.json()) == 1
 
 
+def test_duplicate_license_plate_for_same_user_is_rejected(client, auth_headers):
+    first = client.post(
+        "/api/vehicles", json={"brand": "Toyota", "model": "Corolla", "license_plate": "AA111BB"}, headers=auth_headers
+    )
+    assert first.status_code == 201
+
+    duplicate = client.post(
+        "/api/vehicles", json={"brand": "Renault", "model": "Clio", "license_plate": "AA111BB"}, headers=auth_headers
+    )
+    assert duplicate.status_code == 409
+
+
+def test_multiple_vehicles_without_license_plate_are_allowed(client, auth_headers):
+    first = client.post("/api/vehicles", json={"brand": "Fiat", "model": "Cronos"}, headers=auth_headers)
+    second = client.post("/api/vehicles", json={"brand": "Peugeot", "model": "208"}, headers=auth_headers)
+    assert first.status_code == 201
+    assert second.status_code == 201
+
+
 def test_update_and_delete_vehicle(client, auth_headers):
     created = client.post("/api/vehicles", json={"brand": "Ford", "model": "Fiesta"}, headers=auth_headers)
     vehicle_id = created.json()["id"]
@@ -35,6 +54,18 @@ def test_cannot_access_another_users_vehicle(client, auth_headers):
 
     response = client.get(f"/api/vehicles/{vehicle_id}", headers=other_headers)
     assert response.status_code == 404
+
+
+def test_maintenance_rejects_next_due_date_before_service_date(client, auth_headers):
+    created = client.post("/api/vehicles", json={"brand": "VW", "model": "Gol"}, headers=auth_headers)
+    vehicle_id = created.json()["id"]
+
+    maintenance = client.post(
+        f"/api/vehicles/{vehicle_id}/maintenance",
+        json={"type": "oil_change", "date": "2026-09-10", "next_due_date": "2026-09-01"},
+        headers=auth_headers,
+    )
+    assert maintenance.status_code == 422
 
 
 def test_add_maintenance_bumps_vehicle_mileage(client, auth_headers):

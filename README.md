@@ -1,16 +1,16 @@
-# Vida En Orden
+# Life Under Control
 
 Panel de control personal para organizar tareas, finanzas, compras, vencimientos, documentos, vehículos y más, todo en un solo lugar.
 
-> El proyecto se llamaba **LifeHub**; el nombre visible cambió a **Vida En Orden**. El repositorio, la carpeta local, los nombres de servicios/volúmenes de Docker y los valores por defecto de variables de entorno se dejaron como `lifehub` a propósito, para no romper nada que dependa de esas rutas/identificadores técnicos.
+> El proyecto se llamaba **LifeHub**, después **Vida En Orden**, y el nombre visible cambió otra vez a **Life Under Control**. El repositorio, la carpeta local, los nombres de servicios/volúmenes de Docker y los valores por defecto de variables de entorno se dejaron como `lifehub` a propósito, para no romper nada que dependa de esas rutas/identificadores técnicos.
 
 > **Estado actual: Fase 11 completada.** Arquitectura, base de datos, autenticación (con recuperación de contraseña por código), dashboard configurable, tareas, recordatorios/vencimientos, finanzas personales, suscripciones, compras inteligentes, hogares multi-usuario, documentos/vehículos, calendario, notificaciones (in-app + email), dark mode real, tests automatizados (backend + frontend) y empaquetado de producción funcionando de punta a punta. La Fase 7 (asistente de IA) se descartó a pedido del usuario. Ver [Roadmap](#roadmap).
 
-## Why Vida En Orden?
+## Why Life Under Control?
 
 Organizar la vida cotidiana hoy implica saltar entre una app de notas, el home banking, una lista de compras en el celular, recordatorios sueltos y un calendario que nunca está del todo actualizado. Nada conversa entre sí, así que las cosas se olvidan: una suscripción que se cobra sin que la esperes, un seguro que vence, una compra que se repite todas las semanas sin que nadie lo note.
 
-Vida En Orden existe para bajar esa carga mental: un único panel que responde preguntas simples como *"¿qué tengo que hacer hoy?"*, *"¿en qué gasté este mes?"* y *"¿qué está por vencer?"* — sin abrir cinco aplicaciones distintas.
+Life Under Control existe para bajar esa carga mental: un único panel que responde preguntas simples como *"¿qué tengo que hacer hoy?"*, *"¿en qué gasté este mes?"* y *"¿qué está por vencer?"* — sin abrir cinco aplicaciones distintas.
 
 ## Funcionalidades (Fases 1-6, 8-10)
 
@@ -147,17 +147,60 @@ VITE_API_URL=https://api.tu-dominio.com/api docker compose -f docker-compose.pro
 
 ### Checklist antes de exponer esto a internet de verdad
 
-Este proyecto nació como pieza de portfolio/uso personal, así que varias cosas quedaron con valores de desarrollo a propósito. Antes de un despliegue real:
+Este proyecto nació como pieza de portfolio/uso personal, así que varias cosas quedaron con valores de desarrollo a propósito. Actualizado tras una auditoría de seguridad (ver `AUDITORIA.md`/`CORRECCIONES.md`): lo tildado ya está resuelto en el código, lo que sigue sin tildar necesita una acción tuya al desplegar.
 
-- [ ] Generar un `SECRET_KEY` propio y único (nunca reusar el de `.env.example` ni el de desarrollo).
-- [ ] Reemplazar `S3_ACCESS_KEY`/`S3_SECRET_KEY` (hoy apuntan a MinIO local con credenciales de ejemplo) por un storage S3 real con credenciales propias, o un MinIO productivo con contraseñas fuertes.
-- [ ] Conectar un proveedor de email real en `EmailService` (`backend/app/services/email_service.py`) — hoy solo loguea, usado tanto por recuperación de contraseña/invitaciones de hogar como por las notificaciones de la Fase 8.
+- [ ] Generar un `SECRET_KEY` propio y único (nunca reusar el de `.env.example` ni el de desarrollo) — **si te olvidás, la app ahora rechaza arrancar en producción** en vez de arrancar insegura.
+- [ ] Reemplazar `S3_ACCESS_KEY`/`S3_SECRET_KEY`/`POSTGRES_PASSWORD` (hoy apuntan a valores de ejemplo) por credenciales reales — **mismo caso: la app rechaza arrancar en producción con los valores de ejemplo**.
+- [ ] Configurar `SMTP_HOST`/`SMTP_USER`/`SMTP_PASSWORD` con un proveedor real de email — **el código ya sabe mandar emails de verdad por SMTP** (cualquier proveedor: Gmail, SES, Postmark, Mailgun), antes solo loguéaba.
 - [ ] Restringir `BACKEND_CORS_ORIGINS` al dominio real del frontend (nunca dejar `http://localhost:5173` en producción).
-- [ ] Servir todo detrás de HTTPS (un reverse proxy como Caddy, Traefik o nginx con Let's Encrypt delante de los puertos 80/8000 — este repo no incluye TLS, asume que se termina en la capa de infraestructura).
+- [ ] Servir todo detrás de HTTPS (un reverse proxy como Caddy, Traefik o nginx con Let's Encrypt delante de los puertos 80/8000, o un PaaS que ya te da HTTPS automático — ver sección de Railway más abajo). **Necesario además para que la PWA sea instalable** (fuera de `localhost`, los navegadores exigen HTTPS).
 - [ ] Definir una política de backups para los volúmenes `lifehub_pgdata` y `lifehub_minio_data` (hoy son volúmenes de Docker locales, sin backup automático).
-- [ ] Cambiar las credenciales de PostgreSQL (`POSTGRES_USER`/`POSTGRES_PASSWORD`) por unas que no sean las de ejemplo.
 - [ ] Revisar que no haya cuentas de prueba/datos de QA manual en la base antes de un lanzamiento real (este proyecto acumuló algunas durante el desarrollo — ver `HANDOFF.md`).
-- [ ] Considerar un límite de tasa (rate limiting) en `/api/auth/login` y `/api/auth/password-reset/*` — hoy no hay ninguno más allá del límite de intentos del código de recuperación.
+- [x] Bloqueo de cuenta tras 5 intentos fallidos de login (15 min) — rate limiting por IP sigue sin implementarse (requeriría Redis para ser consistente entre varios workers).
+- [x] Headers de seguridad (CSP, X-Frame-Options, etc.) en nginx y en la API.
+- [x] CI mínimo (lint + tests + build) en `.github/workflows/ci.yml`.
+
+## Instalar como app (PWA)
+
+El frontend es una **Progressive Web App**: no hace falta publicarla en App Store/Google Play para que se sienta como una app de verdad en el celular o la compu.
+
+- **Android (Chrome)**: entrando a la URL de la app, el navegador ofrece "Instalar app" (o `⋮` → "Instalar aplicación"). Queda con ícono propio en la pantalla de inicio, abre en su propia ventana sin la barra de direcciones de Chrome.
+- **iPhone/iPad (Safari)**: `Compartir` (el ícono del cuadrado con la flecha) → **"Agregar a inicio"**. iOS no soporta el instalador automático de Chrome/Android, pero el resultado es equivalente: ícono propio, abre a pantalla completa. (Tiene que ser desde Safari — Chrome en iOS no puede agregar a la pantalla de inicio por una limitación de Apple.)
+- **Computadora (Chrome/Edge)**: ícono de instalar en la barra de direcciones (a la derecha, al lado de los favoritos), o `⋮` → "Instalar Life Under Control". Queda como una app de escritorio más, con su propio ícono en la barra de tareas/dock.
+
+**Requisito importante**: la instalación real (no solo el "Agregar a inicio" de iOS) exige que el sitio esté servido por **HTTPS** — `localhost` es una excepción para desarrollo, pero un dominio real sin TLS no la ofrece. Si seguís la guía de Railway de abajo, el HTTPS viene incluido automáticamente.
+
+Los íconos de la app salen de `frontend/pwa-icon-source.svg` (un cuadrado con el logo). Si en algún momento cambia el diseño, se regeneran así:
+
+```bash
+docker compose exec frontend npx pwa-assets-generator --preset minimal pwa-icon-source.svg
+# mueve los .png/.ico generados a frontend/public/
+```
+
+## Desplegar para que otras personas la usen (Railway)
+
+Con `docker-compose.yml` la app solo es alcanzable desde tu propia compu. Para que otras personas la usen desde sus celulares/computadoras hace falta desplegarla en un servidor real. La opción más simple sin tener que administrar un servidor vos mismo es [Railway](https://railway.app) (tiene un plan de prueba gratis y después es de pago por uso, del orden de U$S 5/mes para una app chica como esta) — se conecta directo a este repo y buildea las mismas imágenes Docker que ya existen (`backend/Dockerfile`, `frontend/Dockerfile.prod`), no hace falta un archivo de configuración nuevo.
+
+Como no tenés (todavía) un dominio propio, cada servicio queda en un subdominio gratuito de Railway (`algo.up.railway.app`), con HTTPS incluido automáticamente — alcanza para que cualquiera lo use desde el celular o la compu, y para que la PWA sea instalable.
+
+**Pasos** (todo se hace en [railway.app](https://railway.app), con tu cuenta — esto no lo puedo hacer yo por vos, requiere que crees la cuenta/conectes el pago):
+
+1. **Creá una cuenta en Railway** y conectá tu GitHub (o subí el repo si todavía no está en GitHub).
+2. **Creá un proyecto nuevo** → "Deploy from GitHub repo" → elegí este repositorio.
+3. Railway va a intentar detectar un solo servicio; hay que agregar **4 servicios** dentro del mismo proyecto (botón "+ New" dentro del proyecto):
+   - **Postgres**: "+ New" → "Database" → "PostgreSQL" (managed, Railway te da la `DATABASE_URL` automáticamente).
+   - **MinIO**: "+ New" → "Empty Service" → en Settings, "Deploy from Docker Image" → `quay.io/minio/minio:RELEASE.2024-11-07T00-52-20Z`, comando `server /data --console-address ":9001"`, agregale un **Volume** montado en `/data` (si no, se pierden los documentos subidos en cada redeploy).
+   - **Backend**: "+ New" → "GitHub Repo" → mismo repo → en Settings, "Root Directory" = `backend`, deja que detecte el `Dockerfile` (el stage `prod` es el default, no hace falta indicar `--target`).
+   - **Frontend**: "+ New" → "GitHub Repo" → mismo repo → en Settings, "Root Directory" = `frontend`, "Dockerfile Path" = `Dockerfile.prod`.
+4. **Variables de entorno** — en cada servicio, pestaña "Variables":
+   - **Backend**: todas las de la tabla de abajo (`SECRET_KEY`, `ENVIRONMENT=production`, las de Postgres — Railway te deja referenciar `${{Postgres.DATABASE_URL}}` directo del servicio de Postgres —, las de MinIO/S3 apuntando al servicio MinIO interno, `BACKEND_CORS_ORIGINS` con la URL pública que te da Railway para el frontend, y opcionalmente las de `SMTP_*`).
+   - **Frontend**: `VITE_API_URL` y `API_ORIGIN` apuntando a la URL pública que te da Railway para el backend. **Ojo**: `VITE_API_URL` se usa en build time, así que hay que setearla *antes* del primer deploy o volver a triggerear un build después de cambiarla (Railway lo hace solo si la marcás como build-time variable).
+   - **MinIO**: `MINIO_ROOT_USER`/`MINIO_ROOT_PASSWORD` (usá lo mismo que `S3_ACCESS_KEY`/`S3_SECRET_KEY` del backend).
+5. En Settings de cada servicio, "Generate Domain" le da una URL pública `*.up.railway.app` con HTTPS. Generála primero para backend y frontend, así conocés las URLs reales antes de terminar de completar el paso 4 (es un ida y vuelta: generás dominios → completás variables con esas URLs → redeploy).
+6. Verificá que el backend corrió las migraciones solo (el `Dockerfile`/comando de arranque ya incluye `alembic upgrade head` antes de levantar uvicorn — confirmalo en los logs del servicio backend en Railway).
+7. Entrá a la URL del frontend desde el celular y la compu, registrate, y confirmá que todo funciona de punta a punta antes de compartir el link con quien quieras que la use.
+
+**Nota sobre `SECRET_KEY`/credenciales**: la app ahora rechaza arrancar en producción si `SECRET_KEY` es el placeholder de ejemplo o si `POSTGRES_PASSWORD`/`S3_ACCESS_KEY`/`S3_SECRET_KEY` quedaron en sus valores de desarrollo (ver checklist más arriba) — generá valores propios en Railway, no copies los de tu `.env` local.
 
 ## Variables de entorno
 
@@ -169,16 +212,21 @@ Este proyecto nació como pieza de portfolio/uso personal, así que varias cosas
 | `BACKEND_CORS_ORIGINS` | Lista JSON de orígenes permitidos por CORS. |
 | `SCHEDULER_ENABLED` / `NOTIFICATION_CHECK_INTERVAL_MINUTES` | Notificaciones (Fase 8). Opcionales, valores por defecto `true` / `15`. |
 | `S3_ENDPOINT_URL` / `S3_ACCESS_KEY` / `S3_SECRET_KEY` / `S3_BUCKET_NAME` / `S3_REGION` | Almacenamiento de archivos (documentos adjuntos). MinIO en desarrollo, cualquier storage S3-compatible en producción. |
-| `VITE_API_URL` | URL base de la API que consume el frontend. |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` / `SMTP_USE_TLS` / `SMTP_FROM_EMAIL` / `SMTP_FROM_NAME` | Envío de email real (reset de contraseña, invitaciones, notificaciones). Opcionales: sin `SMTP_HOST` configurado, el envío se loguea en vez de mandarse (comportamiento de desarrollo). |
+| `VITE_API_URL` | URL base de la API que consume el frontend (se fija en build time, Vite la embebe en el JS compilado). |
+| `API_ORIGIN` | Origen (sin `/api`) del backend, usado por la `Content-Security-Policy` de nginx en producción. Tiene que coincidir con el origen de `VITE_API_URL`. |
 
 ## Seguridad
 
 - Contraseñas hasheadas con bcrypt (nunca en texto plano).
-- Refresh tokens almacenados como hash (SHA-256) y revocables individualmente.
+- Refresh tokens almacenados como hash (SHA-256) y revocables individualmente; reusar un refresh token ya rotado revoca toda la sesión (señal de robo de token).
 - El logout revoca el refresh token en el servidor, no solo lo borra del cliente.
+- Bloqueo de cuenta tras 5 intentos de login fallidos (15 minutos).
 - El endpoint de recuperación de contraseña nunca revela si un email existe o no.
-- Cada usuario solo puede leer/modificar sus propios datos (`/users/me` opera siempre sobre el usuario del token, nunca sobre un ID recibido del cliente).
+- Cada usuario solo puede leer/modificar sus propios datos (`/users/me` opera siempre sobre el usuario del token, nunca sobre un ID recibido del cliente); auditado endpoint por endpoint sin encontrar IDOR (ver `AUDITORIA.md`).
 - CORS configurado explícitamente por entorno.
+- Headers de seguridad (CSP, `X-Frame-Options`, `X-Content-Type-Options`, etc.) en nginx y en la API.
+- La app rechaza arrancar en producción con `SECRET_KEY`/credenciales de base de datos o storage en sus valores de ejemplo.
 
 ## Roadmap
 
@@ -193,6 +241,7 @@ Este proyecto nació como pieza de portfolio/uso personal, así que varias cosas
 - [x] **Fase 9** — Pulido de UX/UI, accesibilidad y responsive avanzado (dark mode real, focus trap en modales, auditoría responsive en mobile).
 - [x] **Fase 10** — Testing extendido y seguridad (tests de frontend con Vitest, cobertura de seguridad ampliada en el flujo de auth del backend).
 - [x] **Fase 11** — Empaquetado final para producción (`docker-compose.prod.yml`, build de frontend con nginx, checklist de producción) y publicación del repo en GitHub.
+- [x] **Fase 12** — Auditoría de seguridad pre-producción con correcciones (ver `AUDITORIA.md`/`CORRECCIONES.md`: bloqueo de login, email real por SMTP, headers de seguridad, validaciones de esquema, etc.) y PWA instalable en celular/computadora.
 
 ## Licencia
 

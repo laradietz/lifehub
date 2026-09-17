@@ -1,7 +1,7 @@
 import uuid
 from datetime import date, timedelta
 from pathlib import Path
-from typing import Optional
+from typing import BinaryIO, Optional
 from uuid import uuid4
 
 from fastapi import HTTPException, UploadFile, status
@@ -15,6 +15,32 @@ from app.schemas.document import DocumentCreate, DocumentUpdate
 from app.services.storage_service import get_storage_service
 
 _MAX_UPLOAD_BYTES = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
+_UPLOAD_CHUNK_BYTES = 1024 * 1024
+
+# Allowlist de extensiones para documentos personales (ver AUDITORIA.md, hallazgo S12):
+# sin esto se podía subir cualquier tipo de archivo (ej. .html/.svg) sin restricción.
+_ALLOWED_EXTENSIONS = {
+    ".pdf", ".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".heif",
+    ".doc", ".docx", ".xls", ".xlsx", ".txt", ".csv",
+}
+
+
+def _read_up_to_limit(file_obj: BinaryIO) -> bytes:
+    """Lee el archivo en chunks y corta apenas se supera el límite, en vez de
+    bufferear todo el archivo en memoria antes de recién ahí rechazarlo
+    (ver AUDITORIA.md, hallazgo S11)."""
+    buffer = bytearray()
+    while True:
+        chunk = file_obj.read(_UPLOAD_CHUNK_BYTES)
+        if not chunk:
+            break
+        buffer.extend(chunk)
+        if len(buffer) > _MAX_UPLOAD_BYTES:
+            raise HTTPException(
+                status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                f"El archivo supera el tamaño máximo permitido ({settings.MAX_UPLOAD_SIZE_MB} MB).",
+            )
+    return bytes(buffer)
 
 
 class DocumentService:
@@ -63,18 +89,21 @@ class DocumentService:
     def attach_file(self, document_id: uuid.UUID, user_id: uuid.UUID, file: UploadFile) -> Document:
         document = self.get_owned_or_404(document_id, user_id)
 
-        contents = file.file.read()
-        if len(contents) > _MAX_UPLOAD_BYTES:
+        safe_name = Path(file.filename or "archivo").name
+        extension = Path(safe_name).suffix.lower()
+        if extension not in _ALLOWED_EXTENSIONS:
             raise HTTPException(
-                status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                f"El archivo supera el tamaño máximo permitido ({settings.MAX_UPLOAD_SIZE_MB} MB).",
+                status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+                f"Tipo de archivo no permitido ({extension or 'sin extensión'}). "
+                f"Extensiones permitidas: {', '.join(sorted(_ALLOWED_EXTENSIONS))}.",
             )
+
+        contents = _read_up_to_limit(file.file)
         file.file.seek(0)
 
         if document.storage_key:
             self.storage.delete(document.storage_key)
 
-        safe_name = Path(file.filename or "archivo").name
         key = f"documents/{user_id}/{uuid4().hex}_{safe_name}"
         self.storage.upload(key, file.file, file.content_type)
 

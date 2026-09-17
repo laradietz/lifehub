@@ -3,7 +3,7 @@ from datetime import date
 from decimal import Decimal
 from typing import Optional
 
-from sqlalchemy import Date, Enum, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy import Date, Enum, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -14,6 +14,12 @@ from app.models.mixins import TimestampMixin, UUIDMixin
 
 class Vehicle(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "vehicles"
+    __table_args__ = (
+        # NULL no choca contra NULL en Postgres, asi que dejar la patente vacia sigue
+        # permitido -- esto solo evita dos vehiculos con la MISMA patente cargada para
+        # el mismo usuario (ver AUDITORIA.md, hallazgo D6).
+        UniqueConstraint("user_id", "license_plate", name="uq_vehicle_user_license_plate"),
+    )
 
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True

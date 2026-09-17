@@ -9,7 +9,7 @@ import { Select } from "@/components/ui/Select"
 import { Textarea } from "@/components/ui/Textarea"
 import { useCategories } from "@/hooks/useCategories"
 import { useHouseholds } from "@/hooks/useHouseholds"
-import { extractErrorMessage } from "@/services/api"
+import { extractErrorMessage, extractFieldErrors } from "@/services/api"
 import type { Priority, RecurrenceType, Task, TaskPayload } from "@/types/task"
 import { fromDatetimeLocalValue, toDatetimeLocalValue } from "@/utils/datetime"
 import { PRIORITY_LABEL, RECURRENCE_LABEL } from "@/utils/taskMeta"
@@ -50,6 +50,7 @@ export function TaskFormModal({ isOpen, onClose, onSubmit, task }: TaskFormModal
   const { households } = useHouseholds()
   const [form, setForm] = useState(EMPTY_FORM)
   const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
@@ -70,6 +71,7 @@ export function TaskFormModal({ isOpen, onClose, onSubmit, task }: TaskFormModal
       setForm(EMPTY_FORM)
     }
     setError(null)
+    setFieldErrors({})
   }, [isOpen, task])
 
   const selectedHousehold = households.find((household) => household.id === form.household_id)
@@ -82,6 +84,7 @@ export function TaskFormModal({ isOpen, onClose, onSubmit, task }: TaskFormModal
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     setError(null)
+    setFieldErrors({})
     setIsSubmitting(true)
     try {
       await onSubmit({
@@ -101,6 +104,7 @@ export function TaskFormModal({ isOpen, onClose, onSubmit, task }: TaskFormModal
       onClose()
     } catch (err) {
       setError(extractErrorMessage(err, "No pudimos guardar la tarea."))
+      setFieldErrors(extractFieldErrors(err))
     } finally {
       setIsSubmitting(false)
     }
@@ -114,12 +118,14 @@ export function TaskFormModal({ isOpen, onClose, onSubmit, task }: TaskFormModal
         <Input
           label="Título"
           required
+          error={fieldErrors.title}
           value={form.title}
           onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
         />
 
         <Textarea
           label="Descripción"
+          error={fieldErrors.description}
           value={form.description}
           onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
         />
@@ -128,6 +134,7 @@ export function TaskFormModal({ isOpen, onClose, onSubmit, task }: TaskFormModal
           <Input
             label="Fecha límite"
             type="datetime-local"
+            error={fieldErrors.due_date}
             value={form.due_date}
             onChange={(event) => setForm((current) => ({ ...current, due_date: event.target.value }))}
           />
@@ -197,6 +204,7 @@ export function TaskFormModal({ isOpen, onClose, onSubmit, task }: TaskFormModal
         <Input
           label="Etiquetas"
           hint="Separadas por coma, por ejemplo: casa, urgente"
+          error={fieldErrors.tags}
           value={form.tags}
           onChange={(event) => setForm((current) => ({ ...current, tags: event.target.value }))}
         />

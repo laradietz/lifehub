@@ -25,9 +25,16 @@ describe("Toaster", () => {
     render(<Toaster />)
     act(() => {
       toast.success("Uno")
-      toast.error("Dos")
+      toast.info("Dos")
     })
     expect(screen.getAllByRole("status")).toHaveLength(2)
+  })
+
+  it("un toast de error usa role=alert (anuncio inmediato en lectores de pantalla)", () => {
+    render(<Toaster />)
+    act(() => toast.error("Algo salió mal."))
+    expect(screen.getByRole("alert")).toHaveTextContent("Algo salió mal.")
+    expect(screen.queryByRole("status")).not.toBeInTheDocument()
   })
 
   it("cerrar un toast con el boton lo saca de la pantalla", async () => {

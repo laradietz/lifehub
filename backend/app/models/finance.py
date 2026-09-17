@@ -19,7 +19,7 @@ class Income(UUIDMixin, TimestampMixin, Base):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     category_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("categories.id", ondelete="SET NULL"), nullable=True
+        UUID(as_uuid=True), ForeignKey("categories.id", ondelete="SET NULL"), nullable=True, index=True
     )
 
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
@@ -36,7 +36,7 @@ class Expense(UUIDMixin, TimestampMixin, Base):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     category_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("categories.id", ondelete="SET NULL"), nullable=True
+        UUID(as_uuid=True), ForeignKey("categories.id", ondelete="SET NULL"), nullable=True, index=True
     )
 
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)

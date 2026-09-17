@@ -173,7 +173,7 @@ export function SettingsPage() {
 
       <Card className="p-6">
         <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Apariencia</h2>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Elegí cómo se ve Vida En Orden en este dispositivo.</p>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Elegí cómo se ve Life Under Control en este dispositivo.</p>
         <div className="mt-4 grid grid-cols-3 gap-2">
           {THEME_OPTIONS.map((option) => {
             const Icon = option.icon

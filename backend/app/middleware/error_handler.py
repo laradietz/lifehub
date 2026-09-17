@@ -15,7 +15,17 @@ def register_exception_handlers(app: FastAPI) -> None:
         # exc.errors() puede incluir objetos no serializables (p. ej. excepciones dentro de 'ctx');
         # si json.dumps falla al serializarlos, la respuesta nunca sale y el navegador lo reporta
         # como un error de CORS (porque el 500 resultante no pasa por el middleware de CORS).
-        errors = [{k: v for k, v in error.items() if k != "ctx"} for error in exc.errors()]
+        errors = []
+        for error in exc.errors():
+            cleaned = {k: v for k, v in error.items() if k != "ctx"}
+            # Pydantic antepone "Value error, " a cualquier ValueError levantado desde un
+            # @model_validator/@field_validator propio (ej. "la fecha de fin no puede ser
+            # anterior al inicio") -- eso es jerga interna de Pydantic, no un mensaje pensado
+            # para mostrarle al usuario final. Se saca antes de que llegue al frontend.
+            msg = cleaned.get("msg")
+            if isinstance(msg, str) and msg.startswith("Value error, "):
+                cleaned["msg"] = msg.removeprefix("Value error, ")
+            errors.append(cleaned)
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             content={"detail": jsonable_encoder(errors)},

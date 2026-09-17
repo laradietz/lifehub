@@ -82,6 +82,18 @@ def test_upload_download_and_remove_document_file(client, auth_headers):
     assert client.get(f"/api/documents/{document_id}/file", headers=auth_headers).status_code == 404
 
 
+def test_upload_rejects_disallowed_extension(client, auth_headers):
+    created = client.post("/api/documents", json={"name": "Sospechoso", "category": "other"}, headers=auth_headers)
+    document_id = created.json()["id"]
+
+    upload = client.post(
+        f"/api/documents/{document_id}/file",
+        files={"file": ("script.html", b"<script>alert(1)</script>", "text/html")},
+        headers=auth_headers,
+    )
+    assert upload.status_code == 415
+
+
 def test_upload_rejects_file_over_size_limit(client, auth_headers, monkeypatch):
     import app.services.document_service as document_service_module
 

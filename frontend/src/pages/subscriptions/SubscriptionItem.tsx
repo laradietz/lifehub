@@ -1,4 +1,5 @@
 import { Pencil, Trash2 } from "lucide-react"
+import { memo } from "react"
 
 import { Badge } from "@/components/ui/Badge"
 import type { Category } from "@/types/category"
@@ -15,7 +16,7 @@ interface SubscriptionItemProps {
   onDelete: (subscription: Subscription) => void
 }
 
-export function SubscriptionItem({ subscription, categories, onToggleActive, onEdit, onDelete }: SubscriptionItemProps) {
+function SubscriptionItemComponent({ subscription, categories, onToggleActive, onEdit, onDelete }: SubscriptionItemProps) {
   const category = categories.find((item) => item.id === subscription.category_id)
 
   return (
@@ -57,3 +58,5 @@ export function SubscriptionItem({ subscription, categories, onToggleActive, onE
     </li>
   )
 }
+
+export const SubscriptionItem = memo(SubscriptionItemComponent)

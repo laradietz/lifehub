@@ -5,14 +5,21 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0f172a" />
-    <meta name="description" content="Vida En Orden: organiza tareas, finanzas, compras y vencimientos en un solo lugar." />
+    <meta name="description" content="Life Under Control: organiza tareas, finanzas, compras y vencimientos en un solo lugar." />
+    <!-- iOS no lee el web manifest para "Agregar a inicio" -- necesita estas
+         meta/link puntuales (Android/desktop sí funcionan solo con el manifest,
+         que vite-plugin-pwa inyecta automáticamente al buildear). -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Life Under Control" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <title>Vida En Orden — Tu vida organizada</title>
+    <title>Life Under Control — Tu vida organizada</title>
   </head>
   <body>
     <div id="root"></div>

@@ -1,4 +1,5 @@
 import { Pencil, Trash2 } from "lucide-react"
+import { memo } from "react"
 
 import { Badge } from "@/components/ui/Badge"
 import type { Category } from "@/types/category"
@@ -15,7 +16,7 @@ interface TransactionItemProps {
   onDelete: (transaction: Income | Expense) => void
 }
 
-export function TransactionItem({ transaction, kind, categories, onEdit, onDelete }: TransactionItemProps) {
+function TransactionItemComponent({ transaction, kind, categories, onEdit, onDelete }: TransactionItemProps) {
   const category = categories.find((item) => item.id === transaction.category_id)
 
   return (
@@ -55,3 +56,5 @@ export function TransactionItem({ transaction, kind, categories, onEdit, onDelet
     </li>
   )
 }
+
+export const TransactionItem = memo(TransactionItemComponent)

@@ -1,0 +1,70 @@
+name: CI
+
+# Hasta esta auditoría (ver AUDITORIA.md, hallazgo S7) no existía ningún pipeline:
+# tests/lint/build solo corrían manualmente. Esto es el piso mínimo: que una
+# regresión no pueda mergearse sin que al menos el linter y los tests corran.
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: lifehub
+          POSTGRES_PASSWORD: lifehub
+          POSTGRES_DB: lifehub
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U lifehub"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      SECRET_KEY: ci-only-secret-key-not-used-in-production
+      ENVIRONMENT: development
+      POSTGRES_USER: lifehub
+      POSTGRES_PASSWORD: lifehub
+      POSTGRES_DB: lifehub
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      SCHEDULER_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Instalar dependencias
+        working-directory: backend
+        run: pip install -r requirements-dev.txt
+      - name: Tests
+        working-directory: backend
+        run: pytest -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Instalar dependencias
+        working-directory: frontend
+        run: npm ci
+      - name: Type-check
+        working-directory: frontend
+        run: npx tsc -b
+      - name: Lint
+        working-directory: frontend
+        run: npx oxlint
+      - name: Tests
+        working-directory: frontend
+        run: npx vitest run

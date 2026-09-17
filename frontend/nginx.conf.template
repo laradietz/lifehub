@@ -1,0 +1,53 @@
+server {
+    # nginx-unprivileged (ver Dockerfile.prod) corre como usuario no-root, que no
+    # puede bindear el puerto 80 salvo que el contenedor conserve CAP_NET_BIND_SERVICE
+    # (Docker se lo da por default, pero no hay que depender de eso) -- 8080 es el
+    # puerto real que expone la imagen.
+    listen 8080;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Headers de seguridad (ver AUDITORIA.md, hallazgo S4). La CSP es la mitigación
+    # principal para el hecho de que los tokens de auth viven en localStorage: si
+    # alguna vez aparece un XSS, esto bloquea la exfiltración a un origen externo.
+    # API_ORIGIN se resuelve en el arranque del contenedor via envsubst (ver
+    # docker-entrypoint de la imagen nginx oficial, que procesa /etc/nginx/templates/
+    # automáticamente) a partir de la env var del mismo nombre.
+    #
+    # OJO: nginx NO hereda add_header de un nivel superior en un location que
+    # define su propio add_header (gotcha clásico) -- por eso estas líneas se
+    # repiten dentro de cada location de abajo en vez de vivir solo acá.
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+    add_header Content-Security-Policy "default-src 'self'; connect-src 'self' ${API_ORIGIN}; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" always;
+    # Strict-Transport-Security se agrega en el reverse proxy que termina TLS
+    # delante de este contenedor (este servidor solo escucha en :80, sin TLS propio).
+
+    # SPA: cualquier ruta que no sea un archivo real cae en index.html para que
+    # React Router la resuelva del lado del cliente (ej. recargar /tasks a mano).
+    location / {
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "DENY" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+        add_header Content-Security-Policy "default-src 'self'; connect-src 'self' ${API_ORIGIN}; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" always;
+        add_header Cache-Control "no-cache" always;
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /assets/ {
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "DENY" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+        add_header Content-Security-Policy "default-src 'self'; connect-src 'self' ${API_ORIGIN}; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" always;
+        expires 1y;
+        add_header Cache-Control "public, immutable" always;
+    }
+
+    gzip on;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+}

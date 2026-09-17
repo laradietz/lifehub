@@ -12,7 +12,7 @@ from app.models.enums import PaymentMethod, SubscriptionFrequency
 class SubscriptionBase(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     price: Decimal = Field(gt=0, decimal_places=2)
-    currency: str = Field(default="USD", max_length=3)
+    currency: str = Field(default="USD", pattern=r"^[A-Z]{3}$")
     frequency: SubscriptionFrequency
     next_billing_date: date_type
     category_id: Optional[uuid.UUID] = None
@@ -26,7 +26,7 @@ class SubscriptionCreate(SubscriptionBase):
 class SubscriptionUpdate(BaseModel):
     name: Optional[str] = Field(default=None, min_length=1, max_length=255)
     price: Optional[Decimal] = Field(default=None, gt=0, decimal_places=2)
-    currency: Optional[str] = Field(default=None, max_length=3)
+    currency: Optional[str] = Field(default=None, pattern=r"^[A-Z]{3}$")
     frequency: Optional[SubscriptionFrequency] = None
     next_billing_date: Optional[date_type] = None
     category_id: Optional[uuid.UUID] = None

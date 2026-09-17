@@ -59,7 +59,7 @@ class EventRepository:
             stmt = stmt.where(Event.start_at >= start_after)
         if start_before is not None:
             stmt = stmt.where(Event.start_at <= start_before)
-        stmt = stmt.order_by(Event.start_at.asc())
+        stmt = stmt.order_by(Event.start_at.asc()).limit(1000)
         return list(self.db.scalars(stmt))
 
     def create(self, user_id: uuid.UUID, **fields: Any) -> Event:

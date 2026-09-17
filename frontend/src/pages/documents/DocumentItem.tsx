@@ -1,5 +1,5 @@
 import { Download, Paperclip, Pencil, Trash2, Upload, X } from "lucide-react"
-import { type ChangeEvent, useRef, useState } from "react"
+import { type ChangeEvent, memo, useRef, useState } from "react"
 
 import { Badge } from "@/components/ui/Badge"
 import { extractErrorMessage } from "@/services/api"
@@ -25,7 +25,7 @@ function expiryLabel(expiryDate: string | null): { text: string; tone: "red" | "
   return { text: `Vence el ${formatDate(expiryDate)}`, tone: "slate" }
 }
 
-export function DocumentItem({ document, onEdit, onDelete, onChanged }: DocumentItemProps) {
+function DocumentItemComponent({ document, onEdit, onDelete, onChanged }: DocumentItemProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -154,3 +154,5 @@ export function DocumentItem({ document, onEdit, onDelete, onChanged }: Document
     </li>
   )
 }
+
+export const DocumentItem = memo(DocumentItemComponent)

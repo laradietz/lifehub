@@ -202,6 +202,66 @@ def test_malformed_authorization_header_rejected(client):
     assert response.status_code == 401
 
 
+def test_login_locks_after_too_many_failed_attempts(client):
+    client.post("/api/auth/register", json={"email": "loginlockout@example.com", "password": "supersecret123"})
+
+    for _ in range(5):
+        response = client.post(
+            "/api/auth/login", data={"username": "loginlockout@example.com", "password": "wrongpassword"}
+        )
+        assert response.status_code == 401
+
+    # Incluso con la contraseña correcta, la cuenta ya quedo bloqueada temporalmente.
+    locked = client.post(
+        "/api/auth/login", data={"username": "loginlockout@example.com", "password": "supersecret123"}
+    )
+    assert locked.status_code == 423
+
+
+def test_login_resets_failed_attempts_after_success(client):
+    client.post("/api/auth/register", json={"email": "resetattempts@example.com", "password": "supersecret123"})
+
+    for _ in range(3):
+        client.post("/api/auth/login", data={"username": "resetattempts@example.com", "password": "wrongpassword"})
+
+    success = client.post(
+        "/api/auth/login", data={"username": "resetattempts@example.com", "password": "supersecret123"}
+    )
+    assert success.status_code == 200
+
+    # El contador se resetea tras un login exitoso: 3 intentos fallidos mas (de un total de 6)
+    # no deberian bloquear la cuenta, porque no son 5 consecutivos.
+    for _ in range(3):
+        response = client.post(
+            "/api/auth/login", data={"username": "resetattempts@example.com", "password": "wrongpassword"}
+        )
+        assert response.status_code == 401
+
+    still_ok = client.post(
+        "/api/auth/login", data={"username": "resetattempts@example.com", "password": "supersecret123"}
+    )
+    assert still_ok.status_code == 200
+
+
+def test_refresh_token_reuse_revokes_all_sessions(client):
+    client.post("/api/auth/register", json={"email": "reuse@example.com", "password": "supersecret123"})
+    session1 = client.post("/api/auth/login", data={"username": "reuse@example.com", "password": "supersecret123"})
+    session2 = client.post("/api/auth/login", data={"username": "reuse@example.com", "password": "supersecret123"})
+    refresh1 = session1.json()["refresh_token"]
+    refresh2 = session2.json()["refresh_token"]
+
+    rotated = client.post("/api/auth/refresh", json={"refresh_token": refresh1})
+    assert rotated.status_code == 200
+
+    # Alguien reusa el refresh_token original, ya rotado: senal de robo de token.
+    reused = client.post("/api/auth/refresh", json={"refresh_token": refresh1})
+    assert reused.status_code == 401
+
+    # Por seguridad, TODA la sesion del usuario queda revocada, no solo el token reusado.
+    session2_after = client.post("/api/auth/refresh", json={"refresh_token": refresh2})
+    assert session2_after.status_code == 401
+
+
 def test_expired_access_token_rejected(client, monkeypatch):
     from datetime import timedelta
 

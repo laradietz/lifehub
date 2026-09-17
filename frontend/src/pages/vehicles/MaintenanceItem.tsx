@@ -1,4 +1,5 @@
 import { Pencil, Trash2 } from "lucide-react"
+import { memo } from "react"
 
 import type { VehicleMaintenance } from "@/types/vehicle"
 import { formatDate } from "@/utils/taskMeta"
@@ -12,7 +13,7 @@ interface MaintenanceItemProps {
   onDelete: (maintenance: VehicleMaintenance) => void
 }
 
-export function MaintenanceItem({ maintenance, currency, onEdit, onDelete }: MaintenanceItemProps) {
+function MaintenanceItemComponent({ maintenance, currency, onEdit, onDelete }: MaintenanceItemProps) {
   return (
     <li className="flex flex-col gap-1 rounded-lg border-b border-slate-100 px-2 py-3 transition-colors last:border-0 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/60">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -53,3 +54,5 @@ export function MaintenanceItem({ maintenance, currency, onEdit, onDelete }: Mai
     </li>
   )
 }
+
+export const MaintenanceItem = memo(MaintenanceItemComponent)

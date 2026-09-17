@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/Input"
 import { Modal } from "@/components/ui/Modal"
 import { Select } from "@/components/ui/Select"
 import { Textarea } from "@/components/ui/Textarea"
-import { extractErrorMessage } from "@/services/api"
+import { extractErrorMessage, extractFieldErrors } from "@/services/api"
 import type { VehicleMaintenance, VehicleMaintenancePayload, VehicleMaintenanceType } from "@/types/vehicle"
 import { MAINTENANCE_TYPE_LABEL } from "@/utils/vehicleMeta"
 
@@ -40,6 +40,7 @@ const EMPTY_FORM: MaintenanceFormState = {
 export function MaintenanceFormModal({ isOpen, onClose, onSubmit, maintenance }: MaintenanceFormModalProps) {
   const [form, setForm] = useState(EMPTY_FORM)
   const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
@@ -58,11 +59,13 @@ export function MaintenanceFormModal({ isOpen, onClose, onSubmit, maintenance }:
       setForm(EMPTY_FORM)
     }
     setError(null)
+    setFieldErrors({})
   }, [isOpen, maintenance])
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     setError(null)
+    setFieldErrors({})
     setIsSubmitting(true)
     try {
       await onSubmit({
@@ -77,6 +80,7 @@ export function MaintenanceFormModal({ isOpen, onClose, onSubmit, maintenance }:
       onClose()
     } catch (err) {
       setError(extractErrorMessage(err, "No pudimos guardar el mantenimiento."))
+      setFieldErrors(extractFieldErrors(err))
     } finally {
       setIsSubmitting(false)
     }
@@ -103,6 +107,7 @@ export function MaintenanceFormModal({ isOpen, onClose, onSubmit, maintenance }:
             label="Fecha"
             type="date"
             required
+            error={fieldErrors.date}
             value={form.date}
             onChange={(event) => setForm((current) => ({ ...current, date: event.target.value }))}
           />
@@ -110,6 +115,7 @@ export function MaintenanceFormModal({ isOpen, onClose, onSubmit, maintenance }:
 
         <Textarea
           label="Descripción"
+          error={fieldErrors.description}
           value={form.description}
           onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
         />
@@ -119,6 +125,7 @@ export function MaintenanceFormModal({ isOpen, onClose, onSubmit, maintenance }:
             label="Kilometraje al momento"
             type="number"
             hint="Opcional"
+            error={fieldErrors.mileage_at_service}
             value={form.mileage_at_service}
             onChange={(event) => setForm((current) => ({ ...current, mileage_at_service: event.target.value }))}
           />
@@ -127,6 +134,7 @@ export function MaintenanceFormModal({ isOpen, onClose, onSubmit, maintenance }:
             type="number"
             step="0.01"
             hint="Opcional"
+            error={fieldErrors.cost}
             value={form.cost}
             onChange={(event) => setForm((current) => ({ ...current, cost: event.target.value }))}
           />
@@ -137,6 +145,7 @@ export function MaintenanceFormModal({ isOpen, onClose, onSubmit, maintenance }:
             label="Próximo vencimiento (fecha)"
             type="date"
             hint="Opcional"
+            error={fieldErrors.next_due_date}
             value={form.next_due_date}
             onChange={(event) => setForm((current) => ({ ...current, next_due_date: event.target.value }))}
           />
@@ -144,6 +153,7 @@ export function MaintenanceFormModal({ isOpen, onClose, onSubmit, maintenance }:
             label="Próximo vencimiento (km)"
             type="number"
             hint="Opcional"
+            error={fieldErrors.next_due_mileage}
             value={form.next_due_mileage}
             onChange={(event) => setForm((current) => ({ ...current, next_due_mileage: event.target.value }))}
           />

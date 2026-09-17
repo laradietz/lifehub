@@ -81,8 +81,12 @@ export function TasksPage() {
   }
 
   async function handleSetInProgress(task: Task) {
-    await taskService.update(task.id, { status: "in_progress" })
-    await loadTasks()
+    try {
+      await taskService.update(task.id, { status: "in_progress" })
+      await loadTasks()
+    } catch (err) {
+      toast.error(extractErrorMessage(err, "No pudimos actualizar la tarea."))
+    }
   }
 
   async function handleDelete() {

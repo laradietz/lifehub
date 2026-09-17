@@ -8,7 +8,7 @@ import { Modal } from "@/components/ui/Modal"
 import { Select } from "@/components/ui/Select"
 import { Textarea } from "@/components/ui/Textarea"
 import { useCategories } from "@/hooks/useCategories"
-import { extractErrorMessage } from "@/services/api"
+import { extractErrorMessage, extractFieldErrors } from "@/services/api"
 import type { Reminder, ReminderPayload } from "@/types/reminder"
 import type { Priority, RecurrenceType } from "@/types/task"
 import { PRIORITY_LABEL, RECURRENCE_LABEL } from "@/utils/taskMeta"
@@ -44,6 +44,7 @@ export function ReminderFormModal({ isOpen, onClose, onSubmit, reminder }: Remin
   const { categories, createCategory } = useCategories("reminder")
   const [form, setForm] = useState(EMPTY_FORM)
   const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
@@ -62,11 +63,13 @@ export function ReminderFormModal({ isOpen, onClose, onSubmit, reminder }: Remin
       setForm(EMPTY_FORM)
     }
     setError(null)
+    setFieldErrors({})
   }, [isOpen, reminder])
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     setError(null)
+    setFieldErrors({})
     setIsSubmitting(true)
     try {
       const advanceNoticeDays = form.advance_notice_days
@@ -87,6 +90,7 @@ export function ReminderFormModal({ isOpen, onClose, onSubmit, reminder }: Remin
       onClose()
     } catch (err) {
       setError(extractErrorMessage(err, "No pudimos guardar el recordatorio."))
+      setFieldErrors(extractFieldErrors(err))
     } finally {
       setIsSubmitting(false)
     }
@@ -101,12 +105,14 @@ export function ReminderFormModal({ isOpen, onClose, onSubmit, reminder }: Remin
           label="Nombre"
           required
           placeholder="Ej: Seguro del auto"
+          error={fieldErrors.name}
           value={form.name}
           onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
         />
 
         <Textarea
           label="Descripción"
+          error={fieldErrors.description}
           value={form.description}
           onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
         />
@@ -116,6 +122,7 @@ export function ReminderFormModal({ isOpen, onClose, onSubmit, reminder }: Remin
             label="Fecha de vencimiento"
             type="date"
             required
+            error={fieldErrors.due_date}
             value={form.due_date}
             onChange={(event) => setForm((current) => ({ ...current, due_date: event.target.value }))}
           />
@@ -155,6 +162,7 @@ export function ReminderFormModal({ isOpen, onClose, onSubmit, reminder }: Remin
         <Input
           label="Avisarme (días antes)"
           hint="Separados por coma, por ejemplo: 30, 7, 1"
+          error={fieldErrors.advance_notice_days}
           value={form.advance_notice_days}
           onChange={(event) => setForm((current) => ({ ...current, advance_notice_days: event.target.value }))}
         />

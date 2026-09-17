@@ -27,7 +27,7 @@ class ReminderRepository:
             stmt = stmt.where(Reminder.is_completed.is_(False))
         if category_id is not None:
             stmt = stmt.where(Reminder.category_id == category_id)
-        stmt = stmt.order_by(Reminder.due_date.asc())
+        stmt = stmt.order_by(Reminder.due_date.asc()).limit(1000)
         return list(self.db.scalars(stmt))
 
     def create(self, user_id: uuid.UUID, **fields: Any) -> Reminder:

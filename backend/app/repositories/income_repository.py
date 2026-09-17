@@ -24,7 +24,8 @@ class IncomeRepository:
             stmt = stmt.where(Income.date >= date_from)
         if date_to is not None:
             stmt = stmt.where(Income.date < date_to)
-        stmt = stmt.order_by(Income.date.desc())
+        # Limite defensivo, ver mismo comentario en expense_repository.py.
+        stmt = stmt.order_by(Income.date.desc()).limit(1000)
         return list(self.db.scalars(stmt))
 
     def create(self, user_id: uuid.UUID, **fields: Any) -> Income:

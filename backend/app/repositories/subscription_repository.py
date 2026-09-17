@@ -19,7 +19,7 @@ class SubscriptionRepository:
         stmt = select(Subscription).where(Subscription.user_id == user_id)
         if not include_inactive:
             stmt = stmt.where(Subscription.is_active.is_(True))
-        stmt = stmt.order_by(Subscription.next_billing_date.asc())
+        stmt = stmt.order_by(Subscription.next_billing_date.asc()).limit(1000)
         return list(self.db.scalars(stmt))
 
     def create(self, user_id: uuid.UUID, **fields: Any) -> Subscription:

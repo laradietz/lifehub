@@ -34,7 +34,7 @@ export function Toaster() {
         return (
           <div
             key={item.id}
-            role="status"
+            role={item.variant === "error" ? "alert" : "status"}
             className={cn(
               "animate-toast-in pointer-events-auto flex w-full max-w-sm items-start gap-2.5 rounded-lg border bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-lg dark:bg-slate-900 dark:text-slate-200",
               CONTAINER_CLASSES[item.variant],

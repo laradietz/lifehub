@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/Input"
 import { Modal } from "@/components/ui/Modal"
 import { Select } from "@/components/ui/Select"
 import { useCategories } from "@/hooks/useCategories"
-import { extractErrorMessage } from "@/services/api"
+import { extractErrorMessage, extractFieldErrors } from "@/services/api"
 import type { PaymentMethod } from "@/types/finance"
 import type { Subscription, SubscriptionFrequency, SubscriptionPayload } from "@/types/subscription"
 import { FREQUENCY_LABEL, PAYMENT_METHOD_LABEL } from "@/utils/financeMeta"
@@ -46,6 +46,7 @@ export function SubscriptionFormModal({ isOpen, onClose, onSubmit, subscription,
   const { categories, createCategory } = useCategories("subscription")
   const [form, setForm] = useState<FormState>(() => emptyForm(defaultCurrency))
   const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
@@ -64,11 +65,13 @@ export function SubscriptionFormModal({ isOpen, onClose, onSubmit, subscription,
       setForm(emptyForm(defaultCurrency))
     }
     setError(null)
+    setFieldErrors({})
   }, [isOpen, subscription, defaultCurrency])
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     setError(null)
+    setFieldErrors({})
     setIsSubmitting(true)
     try {
       await onSubmit({
@@ -83,6 +86,7 @@ export function SubscriptionFormModal({ isOpen, onClose, onSubmit, subscription,
       onClose()
     } catch (err) {
       setError(extractErrorMessage(err, "No pudimos guardar la suscripción."))
+      setFieldErrors(extractFieldErrors(err))
     } finally {
       setIsSubmitting(false)
     }
@@ -97,6 +101,7 @@ export function SubscriptionFormModal({ isOpen, onClose, onSubmit, subscription,
           label="Nombre"
           required
           placeholder="Ej: Netflix"
+          error={fieldErrors.name}
           value={form.name}
           onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
         />
@@ -108,6 +113,7 @@ export function SubscriptionFormModal({ isOpen, onClose, onSubmit, subscription,
             step="0.01"
             min="0.01"
             required
+            error={fieldErrors.price}
             value={form.price}
             onChange={(event) => setForm((current) => ({ ...current, price: event.target.value }))}
           />
@@ -128,6 +134,7 @@ export function SubscriptionFormModal({ isOpen, onClose, onSubmit, subscription,
           label="Próximo cobro"
           type="date"
           required
+          error={fieldErrors.next_billing_date}
           value={form.next_billing_date}
           onChange={(event) => setForm((current) => ({ ...current, next_billing_date: event.target.value }))}
         />

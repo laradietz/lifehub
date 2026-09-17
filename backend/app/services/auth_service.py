@@ -22,6 +22,9 @@ RESET_CODE_LENGTH = 6
 RESET_CODE_TTL_MINUTES = 15
 RESET_CODE_MAX_ATTEMPTS = 5
 
+LOGIN_MAX_ATTEMPTS = 5
+LOGIN_LOCKOUT_MINUTES = 15
+
 
 def _hash_token(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
@@ -54,10 +57,29 @@ class AuthService:
 
     def authenticate(self, email: str, password: str) -> User:
         user = self.users.get_by_email(email)
+
+        if user and user.locked_until and user.locked_until > datetime.now(timezone.utc):
+            raise HTTPException(
+                status.HTTP_423_LOCKED,
+                "Cuenta bloqueada temporalmente por demasiados intentos fallidos. Probá de nuevo en unos minutos.",
+            )
+
         if not user or not security.verify_password(password, user.hashed_password):
+            if user:
+                # Bloqueo de cuenta tras intentos fallidos (protección contra fuerza bruta).
+                # Se commitea acá porque la excepción interrumpe el flujo antes del commit de login().
+                user.failed_login_attempts += 1
+                if user.failed_login_attempts >= LOGIN_MAX_ATTEMPTS:
+                    user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=LOGIN_LOCKOUT_MINUTES)
+                self.db.commit()
             raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Email o contraseña incorrectos.")
+
         if not user.is_active:
             raise HTTPException(status.HTTP_403_FORBIDDEN, "Cuenta deshabilitada.")
+
+        if user.failed_login_attempts or user.locked_until:
+            user.failed_login_attempts = 0
+            user.locked_until = None
         return user
 
     def login(self, email: str, password: str) -> Token:
@@ -84,7 +106,18 @@ class AuthService:
 
         token_hash = _hash_token(refresh_token)
         stored = self.db.query(RefreshToken).filter(RefreshToken.token_hash == token_hash).first()
-        if not stored or stored.revoked or stored.expires_at < datetime.now(timezone.utc):
+
+        if stored and stored.revoked:
+            # Reuso de un refresh token ya rotado: señal de robo de token (ver AUDITORIA.md,
+            # hallazgo S9). Revocamos toda la sesión del usuario, no solo este token, para
+            # cortarle el paso a quien lo haya robado.
+            self.db.query(RefreshToken).filter(
+                RefreshToken.user_id == stored.user_id, RefreshToken.revoked.is_(False)
+            ).update({"revoked": True})
+            self.db.commit()
+            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Token de actualización inválido o expirado.")
+
+        if not stored or stored.expires_at < datetime.now(timezone.utc):
             raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Token de actualización inválido o expirado.")
 
         user = self.users.get_by_id(uuid.UUID(payload["sub"]))

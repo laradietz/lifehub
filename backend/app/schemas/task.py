@@ -9,7 +9,7 @@ from app.models.enums import Priority, RecurrenceType, TaskStatus
 
 class TaskBase(BaseModel):
     title: str = Field(min_length=1, max_length=255)
-    description: Optional[str] = None
+    description: Optional[str] = Field(default=None, max_length=2000)
     due_date: Optional[datetime] = None
     priority: Priority = Priority.MEDIUM
     category_id: Optional[uuid.UUID] = None
@@ -17,7 +17,7 @@ class TaskBase(BaseModel):
     assigned_to_id: Optional[uuid.UUID] = None
     recurrence: RecurrenceType = RecurrenceType.NONE
     recurrence_rule: Optional[str] = Field(default=None, max_length=255)
-    tags: list[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list, max_length=20)
 
 
 class TaskCreate(TaskBase):
@@ -26,7 +26,7 @@ class TaskCreate(TaskBase):
 
 class TaskUpdate(BaseModel):
     title: Optional[str] = Field(default=None, min_length=1, max_length=255)
-    description: Optional[str] = None
+    description: Optional[str] = Field(default=None, max_length=2000)
     due_date: Optional[datetime] = None
     priority: Optional[Priority] = None
     status: Optional[TaskStatus] = None
@@ -35,7 +35,7 @@ class TaskUpdate(BaseModel):
     assigned_to_id: Optional[uuid.UUID] = None
     recurrence: Optional[RecurrenceType] = None
     recurrence_rule: Optional[str] = Field(default=None, max_length=255)
-    tags: Optional[list[str]] = None
+    tags: Optional[list[str]] = Field(default=None, max_length=20)
 
 
 class TaskRead(TaskBase):

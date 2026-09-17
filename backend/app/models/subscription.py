@@ -19,7 +19,7 @@ class Subscription(UUIDMixin, TimestampMixin, Base):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     category_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("categories.id", ondelete="SET NULL"), nullable=True
+        UUID(as_uuid=True), ForeignKey("categories.id", ondelete="SET NULL"), nullable=True, index=True
     )
 
     name: Mapped[str] = mapped_column(String(255), nullable=False)

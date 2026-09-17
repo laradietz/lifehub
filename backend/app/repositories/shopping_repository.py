@@ -29,6 +29,7 @@ class ShoppingListRepository:
             .where(or_(*conditions))
             .options(selectinload(ShoppingList.items))
             .order_by(ShoppingList.name.asc())
+            .limit(1000)
         )
         return list(self.db.scalars(stmt))
 

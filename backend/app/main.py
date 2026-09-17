@@ -10,6 +10,7 @@ from app.core.config import settings
 from app.core.logging import setup_logging
 from app.db.base import Base  # noqa: F401  (registra todos los modelos antes de configurar los mappers)
 from app.middleware.error_handler import register_exception_handlers
+from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.services.notification_dispatch_service import run_notification_dispatch
 from app.services.storage_service import get_storage_service
 
@@ -52,6 +53,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(SecurityHeadersMiddleware)
 
 register_exception_handlers(app)
 

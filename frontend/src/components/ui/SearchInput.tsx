@@ -17,6 +17,7 @@ export function SearchInput({ value, onChange, className, placeholder = "Buscar.
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
+        aria-label={placeholder}
         className="focus-ring h-10 w-full rounded-lg border border-slate-300 bg-white pr-9 pl-9 text-sm text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 [&::-webkit-search-cancel-button]:hidden"
         {...props}
       />

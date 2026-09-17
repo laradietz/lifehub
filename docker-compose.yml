@@ -30,7 +30,9 @@ services:
     command: server /data --console-address ":9001"
 
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      target: dev
     restart: unless-stopped
     env_file:
       - .env

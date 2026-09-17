@@ -3,8 +3,10 @@ import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 
 import { Badge } from "@/components/ui/Badge"
+import { Button } from "@/components/ui/Button"
 import { Card } from "@/components/ui/Card"
 import { Skeleton } from "@/components/ui/Skeleton"
+import { extractErrorMessage } from "@/services/api"
 import { dashboardService } from "@/services/dashboardService"
 import { settingsService } from "@/services/settingsService"
 import { useAuthStore } from "@/store/authStore"
@@ -56,18 +58,23 @@ export function DashboardPage() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null)
   const [widgets, setWidgets] = useState<string[] | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  async function load() {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const [summaryData, settingsData] = await Promise.all([dashboardService.today(), settingsService.get()])
+      setSummary(summaryData)
+      setWidgets(settingsData.dashboard_widgets)
+    } catch (err) {
+      setError(extractErrorMessage(err, "No pudimos cargar tu dashboard."))
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   useEffect(() => {
-    async function load() {
-      setIsLoading(true)
-      try {
-        const [summaryData, settingsData] = await Promise.all([dashboardService.today(), settingsService.get()])
-        setSummary(summaryData)
-        setWidgets(settingsData.dashboard_widgets)
-      } finally {
-        setIsLoading(false)
-      }
-    }
     void load()
   }, [])
 
@@ -81,7 +88,7 @@ export function DashboardPage() {
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Hola, {firstName} 👋</h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Esto es lo que tenés hoy en Vida En Orden.</p>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Esto es lo que tenés hoy en Life Under Control.</p>
       </div>
 
       {isLoading ? (
@@ -89,6 +96,13 @@ export function DashboardPage() {
           <Skeleton className="h-28 w-full" />
           <Skeleton className="h-40 w-full" />
         </div>
+      ) : error ? (
+        <Card className="flex flex-col items-center gap-3 px-6 py-14 text-center">
+          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          <Button variant="secondary" onClick={() => void load()}>
+            Reintentar
+          </Button>
+        </Card>
       ) : noWidgets ? (
         <Card className="animate-fade-in flex flex-col items-center gap-3 px-6 py-14 text-center">
           <div className="flex size-12 items-center justify-center rounded-full bg-brand-50 text-brand-500 dark:bg-brand-950/60 dark:text-brand-300">

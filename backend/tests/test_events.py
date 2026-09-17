@@ -19,6 +19,20 @@ def test_event_requires_auth(client):
     assert response.status_code == 401
 
 
+def test_event_rejects_end_before_start(client, auth_headers):
+    response = client.post(
+        "/api/events",
+        json={"title": "Evento inválido", "start_at": "2026-02-01T10:00:00Z", "end_at": "2026-02-01T09:00:00Z"},
+        headers=auth_headers,
+    )
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    # El prefijo "Value error, " que agrega Pydantic a los ValueError de un
+    # @model_validator no debe llegarle al usuario final (ver error_handler.py).
+    assert not detail[0]["msg"].startswith("Value error,")
+    assert "anterior" in detail[0]["msg"]
+
+
 def test_event_requires_start_at(client, auth_headers):
     response = client.post("/api/events", json={"title": "Sin fecha"}, headers=auth_headers)
     assert response.status_code == 422

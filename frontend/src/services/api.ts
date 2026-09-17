@@ -67,3 +67,33 @@ export function extractErrorMessage(error: unknown, fallback: string): string {
   }
   return fallback
 }
+
+interface ValidationErrorItem {
+  loc?: unknown[]
+  msg?: unknown
+}
+
+/** Mapea los errores 422 de FastAPI/Pydantic a { nombreDeCampo: mensaje }, para
+ * mostrarlos debajo del campo correspondiente en vez de un único mensaje genérico
+ * (ver AUDITORIA.md, hallazgo S17). Los errores de validación cruzada entre campos
+ * (ej. "la fecha de fin no puede ser anterior al inicio") no tienen un campo
+ * específico en `loc` -- esos quedan fuera del mapa y siguen mostrándose con
+ * extractErrorMessage() en el mensaje general del formulario. */
+export function extractFieldErrors(error: unknown): Record<string, string> {
+  if (!axios.isAxiosError(error)) return {}
+  const detail = (error.response?.data as { detail?: unknown } | undefined)?.detail
+  if (!Array.isArray(detail)) return {}
+
+  const fieldErrors: Record<string, string> = {}
+  for (const item of detail as ValidationErrorItem[]) {
+    if (!Array.isArray(item.loc) || typeof item.msg !== "string") continue
+    // loc típico: ["body", "nombre_del_campo"] (o con un índice extra para listas).
+    // Nos quedamos con el último segmento que sea un string -- eso es el nombre de
+    // campo que coincide con el `name`/key que usan los formularios.
+    const fieldName = [...item.loc].reverse().find((segment) => typeof segment === "string" && segment !== "body")
+    if (typeof fieldName === "string" && !(fieldName in fieldErrors)) {
+      fieldErrors[fieldName] = item.msg
+    }
+  }
+  return fieldErrors
+}

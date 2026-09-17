@@ -25,6 +25,7 @@ export function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const bellButtonRef = useRef<HTMLButtonElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!isOpen) return
@@ -36,6 +37,13 @@ export function NotificationBell() {
     }
     document.addEventListener("keydown", handleKeyDown)
     return () => document.removeEventListener("keydown", handleKeyDown)
+  }, [isOpen])
+
+  useEffect(() => {
+    // Mueve el foco al panel cuando se abre, para que un usuario de lector de
+    // pantalla sepa que se abrió un popup en vez de quedarse en el botón
+    // (ver AUDITORIA.md, hallazgo S25).
+    if (isOpen) panelRef.current?.focus()
   }, [isOpen])
 
   async function loadUnreadCount() {
@@ -93,6 +101,7 @@ export function NotificationBell() {
         ref={bellButtonRef}
         type="button"
         aria-label="Notificaciones"
+        aria-haspopup="true"
         aria-expanded={isOpen}
         onClick={() => (isOpen ? setIsOpen(false) : void openPanel())}
         className="focus-ring relative flex size-9 items-center justify-center rounded-full text-slate-600 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
@@ -108,7 +117,13 @@ export function NotificationBell() {
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} aria-hidden="true" />
-          <div className="animate-modal-in absolute right-0 z-50 mt-2 flex max-h-96 w-80 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900">
+          <div
+            ref={panelRef}
+            role="dialog"
+            aria-label="Notificaciones"
+            tabIndex={-1}
+            className="animate-modal-in absolute right-0 z-50 mt-2 flex max-h-96 w-80 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg outline-none dark:border-slate-800 dark:bg-slate-900"
+          >
             <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2.5 dark:border-slate-800">
               <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">Notificaciones</span>
               {hasUnreadInPanel && (

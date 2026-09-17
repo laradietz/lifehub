@@ -56,11 +56,13 @@ function StatTile({
 export function FinancePage() {
   const [summary, setSummary] = useState<FinanceSummary | null>(null)
   const [isLoadingSummary, setIsLoadingSummary] = useState(true)
+  const [summaryError, setSummaryError] = useState<string | null>(null)
 
   const [kind, setKind] = useState<Kind>("expense")
   const [incomes, setIncomes] = useState<Income[]>([])
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [isLoadingList, setIsLoadingList] = useState(true)
+  const [listError, setListError] = useState<string | null>(null)
   const [search, setSearch] = useState("")
   const [sortKey, setSortKey] = useState<SortKey>("date")
   const [sortAsc, setSortAsc] = useState(false)
@@ -75,8 +77,11 @@ export function FinancePage() {
 
   async function loadSummary() {
     setIsLoadingSummary(true)
+    setSummaryError(null)
     try {
       setSummary(await financeService.summary())
+    } catch (err) {
+      setSummaryError(extractErrorMessage(err, "No pudimos cargar el resumen financiero."))
     } finally {
       setIsLoadingSummary(false)
     }
@@ -84,10 +89,13 @@ export function FinancePage() {
 
   async function loadLists() {
     setIsLoadingList(true)
+    setListError(null)
     try {
       const [incomeData, expenseData] = await Promise.all([incomeService.list(), expenseService.list()])
       setIncomes(incomeData)
       setExpenses(expenseData)
+    } catch (err) {
+      setListError(extractErrorMessage(err, "No pudimos cargar tus movimientos."))
     } finally {
       setIsLoadingList(false)
     }
@@ -195,6 +203,13 @@ export function FinancePage() {
 
       {isLoadingSummary ? (
         <Skeleton className="h-24 w-full" />
+      ) : summaryError ? (
+        <Card className="flex flex-col items-center gap-3 px-6 py-8 text-center">
+          <p className="text-sm text-red-600 dark:text-red-400">{summaryError}</p>
+          <Button variant="secondary" onClick={() => void loadSummary()}>
+            Reintentar
+          </Button>
+        </Card>
       ) : (
         summary && (
           <Card className="p-5">
@@ -289,6 +304,13 @@ export function FinancePage() {
             {[1, 2, 3].map((key) => (
               <Skeleton key={key} className="h-12 w-full" />
             ))}
+          </div>
+        ) : listError ? (
+          <div className="flex flex-col items-center gap-3 py-14 text-center">
+            <p className="text-sm text-red-600 dark:text-red-400">{listError}</p>
+            <Button variant="secondary" onClick={() => void loadLists()}>
+              Reintentar
+            </Button>
           </div>
         ) : list.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-14 text-center">

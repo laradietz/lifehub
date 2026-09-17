@@ -20,6 +20,13 @@ def test_create_custom_category(client, auth_headers):
     assert any(category["name"] == "Voluntariado" for category in listing)
 
 
+def test_create_category_rejects_invalid_color_format(client, auth_headers):
+    response = client.post(
+        "/api/categories", json={"type": "task", "name": "Con color feo", "color": "not-a-color"}, headers=auth_headers
+    )
+    assert response.status_code == 422
+
+
 def test_cannot_delete_another_users_category(client, auth_headers):
     created = client.post("/api/categories", json={"type": "task", "name": "Mia"}, headers=auth_headers)
     category_id = created.json()["id"]

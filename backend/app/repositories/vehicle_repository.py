@@ -25,6 +25,7 @@ class VehicleRepository:
             .where(Vehicle.user_id == user_id)
             .options(selectinload(Vehicle.maintenance_records))
             .order_by(Vehicle.brand.asc(), Vehicle.model.asc())
+            .limit(1000)
         )
         return list(self.db.scalars(stmt))
 

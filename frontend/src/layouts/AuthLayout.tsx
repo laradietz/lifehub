@@ -15,7 +15,7 @@ export function AuthLayout({ children }: { children: ReactNode }) {
         <Logo />
         <div className="mx-auto w-full max-w-sm py-10">{children}</div>
         <p className="text-center text-xs text-slate-400 dark:text-slate-500">
-          © {new Date().getFullYear()} Vida En Orden. Todos los derechos reservados.
+          © {new Date().getFullYear()} Life Under Control. Todos los derechos reservados.
         </p>
       </div>
 

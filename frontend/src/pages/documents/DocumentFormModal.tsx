@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/Input"
 import { Modal } from "@/components/ui/Modal"
 import { Select } from "@/components/ui/Select"
 import { Textarea } from "@/components/ui/Textarea"
-import { extractErrorMessage } from "@/services/api"
+import { extractErrorMessage, extractFieldErrors } from "@/services/api"
 import type { Document, DocumentCategory, DocumentPayload } from "@/types/document"
 import { DOCUMENT_CATEGORY_LABEL } from "@/utils/documentMeta"
 
@@ -34,6 +34,7 @@ const EMPTY_FORM: DocumentFormState = {
 export function DocumentFormModal({ isOpen, onClose, onSubmit, document }: DocumentFormModalProps) {
   const [form, setForm] = useState(EMPTY_FORM)
   const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
@@ -49,11 +50,13 @@ export function DocumentFormModal({ isOpen, onClose, onSubmit, document }: Docum
       setForm(EMPTY_FORM)
     }
     setError(null)
+    setFieldErrors({})
   }, [isOpen, document])
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     setError(null)
+    setFieldErrors({})
     setIsSubmitting(true)
     try {
       await onSubmit({
@@ -65,6 +68,7 @@ export function DocumentFormModal({ isOpen, onClose, onSubmit, document }: Docum
       onClose()
     } catch (err) {
       setError(extractErrorMessage(err, "No pudimos guardar el documento."))
+      setFieldErrors(extractFieldErrors(err))
     } finally {
       setIsSubmitting(false)
     }
@@ -79,6 +83,7 @@ export function DocumentFormModal({ isOpen, onClose, onSubmit, document }: Docum
           label="Nombre"
           required
           placeholder="Ej: Póliza seguro del hogar"
+          error={fieldErrors.name}
           value={form.name}
           onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
         />
@@ -99,6 +104,7 @@ export function DocumentFormModal({ isOpen, onClose, onSubmit, document }: Docum
             label="Fecha de vencimiento"
             type="date"
             hint="Opcional"
+            error={fieldErrors.expiry_date}
             value={form.expiry_date}
             onChange={(event) => setForm((current) => ({ ...current, expiry_date: event.target.value }))}
           />
@@ -106,6 +112,7 @@ export function DocumentFormModal({ isOpen, onClose, onSubmit, document }: Docum
 
         <Textarea
           label="Notas"
+          error={fieldErrors.notes}
           value={form.notes}
           onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))}
         />

@@ -24,7 +24,10 @@ class ExpenseRepository:
             stmt = stmt.where(Expense.date >= date_from)
         if date_to is not None:
             stmt = stmt.where(Expense.date < date_to)
-        stmt = stmt.order_by(Expense.date.desc())
+        # Limite defensivo: sin paginacion real todavia (ver AUDITORIA.md, hallazgo
+        # S16), esto evita un worst-case de traer decenas de miles de filas en una sola
+        # respuesta si el historial crece mucho.
+        stmt = stmt.order_by(Expense.date.desc()).limit(1000)
         return list(self.db.scalars(stmt))
 
     def create(self, user_id: uuid.UUID, **fields: Any) -> Expense:

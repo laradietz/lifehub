@@ -1,4 +1,5 @@
 import { Check, Trash2 } from "lucide-react"
+import { memo } from "react"
 
 import type { ShoppingItem } from "@/types/shopping"
 
@@ -8,7 +9,7 @@ interface ShoppingItemRowProps {
   onDelete: (item: ShoppingItem) => void
 }
 
-export function ShoppingItemRow({ item, onToggle, onDelete }: ShoppingItemRowProps) {
+function ShoppingItemRowComponent({ item, onToggle, onDelete }: ShoppingItemRowProps) {
   return (
     <li className="flex items-center gap-3 rounded-lg border-b border-slate-100 px-2 py-2.5 transition-colors last:border-0 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/60">
       <button
@@ -51,3 +52,5 @@ export function ShoppingItemRow({ item, onToggle, onDelete }: ShoppingItemRowPro
     </li>
   )
 }
+
+export const ShoppingItemRow = memo(ShoppingItemRowComponent)

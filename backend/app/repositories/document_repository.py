@@ -29,7 +29,7 @@ class DocumentRepository:
             stmt = stmt.where(Document.category == category)
         if expiring_before:
             stmt = stmt.where(Document.expiry_date.is_not(None), Document.expiry_date <= expiring_before)
-        stmt = stmt.order_by(Document.expiry_date.asc().nulls_last(), Document.name.asc())
+        stmt = stmt.order_by(Document.expiry_date.asc().nulls_last(), Document.name.asc()).limit(1000)
         return list(self.db.scalars(stmt))
 
     def create(self, user_id: uuid.UUID, **fields: Any) -> Document:

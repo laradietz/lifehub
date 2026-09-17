@@ -21,13 +21,16 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-lifehub}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lifehub}
-      POSTGRES_DB: ${POSTGRES_DB:-lifehub}
+      # Sin fallback a "lifehub": si el .env de produccion no define estas variables,
+      # que el contenedor falle en vez de arrancar con una credencial debil conocida
+      # (ver AUDITORIA.md, hallazgo S3).
+      POSTGRES_USER: ${POSTGRES_USER:?Definí POSTGRES_USER en el .env de producción}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Definí POSTGRES_PASSWORD en el .env de producción}
+      POSTGRES_DB: ${POSTGRES_DB:?Definí POSTGRES_DB en el .env de producción}
     volumes:
       - lifehub_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lifehub}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -36,14 +39,16 @@ services:
     image: quay.io/minio/minio:RELEASE.2024-11-07T00-52-20Z
     restart: unless-stopped
     environment:
-      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-lifehub}
-      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-lifehub12345}
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:?Definí S3_ACCESS_KEY en el .env de producción}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:?Definí S3_SECRET_KEY en el .env de producción}
     volumes:
       - lifehub_minio_data:/data
     command: server /data --console-address ":9001"
 
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      target: prod
     restart: unless-stopped
     env_file:
       - .env
@@ -67,8 +72,13 @@ services:
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8000/api}
     restart: unless-stopped
+    environment:
+      # Origen (sin /api) permitido en la CSP del nginx de producción (connect-src);
+      # debe coincidir con el origen de VITE_API_URL de arriba.
+      API_ORIGIN: ${API_ORIGIN:-http://localhost:8000}
     ports:
-      - "80:80"
+      # La imagen nginx-unprivileged escucha en :8080 (no-root, ver Dockerfile.prod).
+      - "80:8080"
     depends_on:
       - backend
 

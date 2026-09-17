@@ -1,0 +1,8 @@
+# Dependencias solo para desarrollo/tests. No se instalan en la imagen de
+# producción (ver AUDITORIA.md, hallazgo S14) — el Dockerfile usa esto solo en
+# el stage "dev", que es el que build-ea docker-compose.yml.
+-r requirements.txt
+
+pytest==8.3.4
+pytest-cov==6.0.0
+httpx==0.28.1

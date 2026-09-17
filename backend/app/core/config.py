@@ -8,7 +8,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-    PROJECT_NAME: str = "Vida En Orden"
+    PROJECT_NAME: str = "Life Under Control"
     API_V1_STR: str = "/api"
     ENVIRONMENT: str = "development"
 
@@ -27,6 +27,18 @@ class Settings(BaseSettings):
     BACKEND_CORS_ORIGINS: list[str] = ["http://localhost:5173"]
 
     MAX_UPLOAD_SIZE_MB: int = 10
+
+    # Email (ver AUDITORIA.md, hallazgo S8): si SMTP_HOST no está configurado, el
+    # EmailService cae a solo loguear (comportamiento de siempre en desarrollo). Con
+    # SMTP_HOST configurado, manda emails de verdad -- sirve para cualquier proveedor
+    # que hable SMTP (Gmail, SES, Postmark, Mailgun, etc.), sin agregar un SDK nuevo.
+    SMTP_HOST: str | None = None
+    SMTP_PORT: int = 587
+    SMTP_USER: str | None = None
+    SMTP_PASSWORD: str | None = None
+    SMTP_USE_TLS: bool = True
+    SMTP_FROM_EMAIL: str = "no-reply@lifeundercontrol.local"
+    SMTP_FROM_NAME: str = "Life Under Control"
 
     # Fase 8 (Notificaciones): worker en el mismo contenedor backend (APScheduler),
     # sin servicio aparte. Se desactiva en tests (ver conftest.py) para que la suite
@@ -53,6 +65,33 @@ class Settings(BaseSettings):
             f"postgresql+psycopg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
             f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
+
+    def model_post_init(self, __context: object) -> None:
+        # Auditoría de seguridad (ver AUDITORIA.md, hallazgo S2): en producción no debe
+        # poder arrancar con el SECRET_KEY placeholder de .env.example ni con las
+        # credenciales default de desarrollo de Postgres/S3 (hallazgo S3).
+        if self.ENVIRONMENT != "production":
+            return
+
+        placeholder_secret = "change-this-to-a-long-random-string"
+        if self.SECRET_KEY == placeholder_secret or len(self.SECRET_KEY) < 32:
+            raise ValueError(
+                "SECRET_KEY inválido para producción: generá uno propio con "
+                "`python -c \"import secrets; print(secrets.token_urlsafe(64))\"` "
+                "y configuralo en el .env real (nunca uses el valor de .env.example)."
+            )
+
+        weak_defaults = {
+            "POSTGRES_PASSWORD": "lifehub",
+            "S3_ACCESS_KEY": "lifehub",
+            "S3_SECRET_KEY": "lifehub12345",
+        }
+        for field_name, weak_value in weak_defaults.items():
+            if getattr(self, field_name) == weak_value:
+                raise ValueError(
+                    f"{field_name} sigue en su valor default de desarrollo ('{weak_value}'). "
+                    "Configurá una credencial real en el .env de producción antes de arrancar."
+                )
 
 
 @lru_cache

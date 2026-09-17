@@ -8,7 +8,7 @@ import { Modal } from "@/components/ui/Modal"
 import { Select } from "@/components/ui/Select"
 import { Textarea } from "@/components/ui/Textarea"
 import { useCategories } from "@/hooks/useCategories"
-import { extractErrorMessage } from "@/services/api"
+import { extractErrorMessage, extractFieldErrors } from "@/services/api"
 import type { Expense, Income, PaymentMethod, TransactionPayload } from "@/types/finance"
 import { PAYMENT_METHOD_LABEL } from "@/utils/financeMeta"
 
@@ -46,6 +46,7 @@ export function TransactionFormModal({ kind, isOpen, onClose, onSubmit, transact
   const { categories, createCategory } = useCategories(kind)
   const [form, setForm] = useState<FormState>(() => emptyForm(defaultCurrency))
   const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
@@ -63,11 +64,13 @@ export function TransactionFormModal({ kind, isOpen, onClose, onSubmit, transact
       setForm(emptyForm(defaultCurrency))
     }
     setError(null)
+    setFieldErrors({})
   }, [isOpen, transaction, defaultCurrency])
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     setError(null)
+    setFieldErrors({})
     setIsSubmitting(true)
     try {
       await onSubmit({
@@ -81,6 +84,7 @@ export function TransactionFormModal({ kind, isOpen, onClose, onSubmit, transact
       onClose()
     } catch (err) {
       setError(extractErrorMessage(err, kind === "income" ? "No pudimos guardar el ingreso." : "No pudimos guardar el gasto."))
+      setFieldErrors(extractFieldErrors(err))
     } finally {
       setIsSubmitting(false)
     }
@@ -100,6 +104,7 @@ export function TransactionFormModal({ kind, isOpen, onClose, onSubmit, transact
             step="0.01"
             min="0.01"
             required
+            error={fieldErrors.amount}
             value={form.amount}
             onChange={(event) => setForm((current) => ({ ...current, amount: event.target.value }))}
           />
@@ -107,6 +112,7 @@ export function TransactionFormModal({ kind, isOpen, onClose, onSubmit, transact
             label="Fecha"
             type="date"
             required
+            error={fieldErrors.date}
             value={form.date}
             onChange={(event) => setForm((current) => ({ ...current, date: event.target.value }))}
           />
@@ -114,6 +120,7 @@ export function TransactionFormModal({ kind, isOpen, onClose, onSubmit, transact
 
         <Textarea
           label="Descripción"
+          error={fieldErrors.description}
           value={form.description}
           onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
         />

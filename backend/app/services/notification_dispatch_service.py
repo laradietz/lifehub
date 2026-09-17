@@ -42,7 +42,6 @@ class NotificationDispatchService:
         created += self._check_documents()
         created += self._check_vehicle_maintenance()
         created += self._check_events()
-        self.db.commit()
         return created
 
     def _notify(
@@ -78,6 +77,14 @@ class NotificationDispatchService:
             related_entity_id=related_entity_id,
             sent_at=datetime.now(timezone.utc),
         )
+
+        # Commiteamos por entidad, ANTES de mandar el email (efecto irreversible).
+        # Antes esto se commiteaba una sola vez al final de run(): si una entidad
+        # posterior tiraba una excepcion, el rollback borraba notificaciones cuyo
+        # email ya se habia enviado, y el proximo ciclo las reenviaba duplicadas
+        # (ver AUDITORIA.md, hallazgo S13).
+        self.db.commit()
+
         if user:
             self.email_service.send(user.email, title, message)
         return True

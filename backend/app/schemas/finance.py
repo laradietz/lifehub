@@ -11,9 +11,9 @@ from app.models.enums import PaymentMethod
 
 class IncomeBase(BaseModel):
     amount: Decimal = Field(gt=0, decimal_places=2)
-    currency: str = Field(default="USD", max_length=3)
+    currency: str = Field(default="USD", pattern=r"^[A-Z]{3}$")
     date: date_type
-    description: Optional[str] = None
+    description: Optional[str] = Field(default=None, max_length=2000)
     category_id: Optional[uuid.UUID] = None
     payment_method: PaymentMethod
 
@@ -24,9 +24,9 @@ class IncomeCreate(IncomeBase):
 
 class IncomeUpdate(BaseModel):
     amount: Optional[Decimal] = Field(default=None, gt=0, decimal_places=2)
-    currency: Optional[str] = Field(default=None, max_length=3)
+    currency: Optional[str] = Field(default=None, pattern=r"^[A-Z]{3}$")
     date: Optional[date_type] = None
-    description: Optional[str] = None
+    description: Optional[str] = Field(default=None, max_length=2000)
     category_id: Optional[uuid.UUID] = None
     payment_method: Optional[PaymentMethod] = None
 
@@ -41,9 +41,9 @@ class IncomeRead(IncomeBase):
 
 class ExpenseBase(BaseModel):
     amount: Decimal = Field(gt=0, decimal_places=2)
-    currency: str = Field(default="USD", max_length=3)
+    currency: str = Field(default="USD", pattern=r"^[A-Z]{3}$")
     date: date_type
-    description: Optional[str] = None
+    description: Optional[str] = Field(default=None, max_length=2000)
     category_id: Optional[uuid.UUID] = None
     payment_method: PaymentMethod
 
@@ -54,9 +54,9 @@ class ExpenseCreate(ExpenseBase):
 
 class ExpenseUpdate(BaseModel):
     amount: Optional[Decimal] = Field(default=None, gt=0, decimal_places=2)
-    currency: Optional[str] = Field(default=None, max_length=3)
+    currency: Optional[str] = Field(default=None, pattern=r"^[A-Z]{3}$")
     date: Optional[date_type] = None
-    description: Optional[str] = None
+    description: Optional[str] = Field(default=None, max_length=2000)
     category_id: Optional[uuid.UUID] = None
     payment_method: Optional[PaymentMethod] = None
 

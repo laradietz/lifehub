@@ -9,7 +9,7 @@ from app.models.enums import CategoryType
 class CategoryCreate(BaseModel):
     type: CategoryType
     name: str = Field(min_length=1, max_length=100)
-    color: Optional[str] = Field(default=None, max_length=20)
+    color: Optional[str] = Field(default=None, pattern=r"^#[0-9a-fA-F]{6}$")
     icon: Optional[str] = Field(default=None, max_length=50)
 
 

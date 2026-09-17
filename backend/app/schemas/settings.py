@@ -18,7 +18,7 @@ class UserSettingsRead(BaseModel):
 
 class UserSettingsUpdate(BaseModel):
     language: Optional[str] = Field(default=None, max_length=10)
-    currency: Optional[str] = Field(default=None, max_length=3)
+    currency: Optional[str] = Field(default=None, pattern=r"^[A-Z]{3}$")
     timezone: Optional[str] = Field(default=None, max_length=50)
     theme: Optional[str] = Field(default=None, max_length=10)
     enabled_modules: Optional[list[str]] = None

@@ -3,7 +3,9 @@ FROM node:22-alpine
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install
+# npm ci (no npm install): instala exactamente lo que dice package-lock.json, sin
+# poder actualizarlo silenciosamente en cada build (ver AUDITORIA.md).
+RUN npm ci
 
 COPY . .
 

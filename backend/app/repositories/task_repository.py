@@ -68,7 +68,7 @@ class TaskRepository:
             stmt = stmt.where(Task.due_date <= due_before)
         if due_after is not None:
             stmt = stmt.where(Task.due_date >= due_after)
-        stmt = stmt.order_by(Task.due_date.is_(None), Task.due_date.asc())
+        stmt = stmt.order_by(Task.due_date.is_(None), Task.due_date.asc()).limit(1000)
         return list(self.db.scalars(stmt))
 
     def create(self, user_id: uuid.UUID, **fields: Any) -> Task:

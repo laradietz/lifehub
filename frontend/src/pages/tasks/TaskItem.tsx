@@ -1,4 +1,5 @@
 import { Check, Pencil, Trash2 } from "lucide-react"
+import { memo } from "react"
 
 import { Badge } from "@/components/ui/Badge"
 import type { Category } from "@/types/category"
@@ -16,7 +17,7 @@ interface TaskItemProps {
   onDelete: (task: Task) => void
 }
 
-export function TaskItem({ task, categories, households, onToggleComplete, onSetInProgress, onEdit, onDelete }: TaskItemProps) {
+function TaskItemComponent({ task, categories, households, onToggleComplete, onSetInProgress, onEdit, onDelete }: TaskItemProps) {
   const category = categories.find((item) => item.id === task.category_id)
   const household = households.find((item) => item.id === task.household_id)
   const assignee = household?.members.find((member) => member.user_id === task.assigned_to_id)
@@ -84,3 +85,5 @@ export function TaskItem({ task, categories, households, onToggleComplete, onSet
     </li>
   )
 }
+
+export const TaskItem = memo(TaskItemComponent)

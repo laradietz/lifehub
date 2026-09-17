@@ -1,4 +1,5 @@
 import { Check, Pencil, Trash2 } from "lucide-react"
+import { memo } from "react"
 
 import { Badge } from "@/components/ui/Badge"
 import type { Category } from "@/types/category"
@@ -21,7 +22,7 @@ function dueLabel(dueDate: string): { text: string; tone: "red" | "amber" | "sla
   return { text: `Vence el ${formatDate(dueDate)}`, tone: "slate" }
 }
 
-export function ReminderItem({ reminder, categories, onToggleComplete, onEdit, onDelete }: ReminderItemProps) {
+function ReminderItemComponent({ reminder, categories, onToggleComplete, onEdit, onDelete }: ReminderItemProps) {
   const category = categories.find((item) => item.id === reminder.category_id)
   const due = dueLabel(reminder.due_date)
 
@@ -82,3 +83,5 @@ export function ReminderItem({ reminder, categories, onToggleComplete, onEdit, o
     </li>
   )
 }
+
+export const ReminderItem = memo(ReminderItemComponent)

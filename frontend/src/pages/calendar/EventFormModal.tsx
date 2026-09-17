@@ -9,7 +9,7 @@ import { Select } from "@/components/ui/Select"
 import { Textarea } from "@/components/ui/Textarea"
 import { useCategories } from "@/hooks/useCategories"
 import { useHouseholds } from "@/hooks/useHouseholds"
-import { extractErrorMessage } from "@/services/api"
+import { extractErrorMessage, extractFieldErrors } from "@/services/api"
 import type { Event, EventPayload } from "@/types/event"
 import { dateKeyFromIso } from "@/utils/calendar"
 import { fromDatetimeLocalValue, toDatetimeLocalValue } from "@/utils/datetime"
@@ -49,6 +49,7 @@ export function EventFormModal({ isOpen, onClose, onSubmit, event, defaultDate }
   const { households } = useHouseholds()
   const [form, setForm] = useState(EMPTY_FORM)
   const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
@@ -68,6 +69,7 @@ export function EventFormModal({ isOpen, onClose, onSubmit, event, defaultDate }
       setForm({ ...EMPTY_FORM, start_at: defaultDate ? `${defaultDate}T09:00` : "" })
     }
     setError(null)
+    setFieldErrors({})
   }, [isOpen, event, defaultDate])
 
   function handleAllDayToggle(checked: boolean) {
@@ -95,6 +97,7 @@ export function EventFormModal({ isOpen, onClose, onSubmit, event, defaultDate }
   async function handleSubmit(formEvent: FormEvent) {
     formEvent.preventDefault()
     setError(null)
+    setFieldErrors({})
     setIsSubmitting(true)
     try {
       const startAt = toIso(form.start_at)
@@ -115,6 +118,7 @@ export function EventFormModal({ isOpen, onClose, onSubmit, event, defaultDate }
       onClose()
     } catch (err) {
       setError(extractErrorMessage(err, "No pudimos guardar el evento."))
+      setFieldErrors(extractFieldErrors(err))
     } finally {
       setIsSubmitting(false)
     }
@@ -128,12 +132,14 @@ export function EventFormModal({ isOpen, onClose, onSubmit, event, defaultDate }
         <Input
           label="Título"
           required
+          error={fieldErrors.title}
           value={form.title}
           onChange={(formEvent) => setForm((current) => ({ ...current, title: formEvent.target.value }))}
         />
 
         <Textarea
           label="Descripción"
+          error={fieldErrors.description}
           value={form.description}
           onChange={(formEvent) => setForm((current) => ({ ...current, description: formEvent.target.value }))}
         />
@@ -153,12 +159,14 @@ export function EventFormModal({ isOpen, onClose, onSubmit, event, defaultDate }
             label="Inicio"
             required
             type={form.all_day ? "date" : "datetime-local"}
+            error={fieldErrors.start_at}
             value={form.start_at}
             onChange={(formEvent) => setForm((current) => ({ ...current, start_at: formEvent.target.value }))}
           />
           <Input
             label="Fin"
             type={form.all_day ? "date" : "datetime-local"}
+            error={fieldErrors.end_at}
             value={form.end_at}
             onChange={(formEvent) => setForm((current) => ({ ...current, end_at: formEvent.target.value }))}
           />

@@ -107,20 +107,32 @@ export function ShoppingPage() {
 
   async function handleAddSuggestion(itemName: string) {
     if (!selectedList) return
-    await shoppingService.addItem(selectedList.id, { name: itemName })
-    await loadLists()
+    try {
+      await shoppingService.addItem(selectedList.id, { name: itemName })
+      await loadLists()
+    } catch (err) {
+      toast.error(extractErrorMessage(err, "No pudimos agregar el ítem."))
+    }
   }
 
   async function handleToggleItem(item: ShoppingItem) {
     if (!selectedList) return
-    await shoppingService.updateItem(selectedList.id, item.id, { is_purchased: !item.is_purchased })
-    await Promise.all([loadLists(), loadSuggestions()])
+    try {
+      await shoppingService.updateItem(selectedList.id, item.id, { is_purchased: !item.is_purchased })
+      await Promise.all([loadLists(), loadSuggestions()])
+    } catch (err) {
+      toast.error(extractErrorMessage(err, "No pudimos actualizar el ítem."))
+    }
   }
 
   async function handleDeleteItem(item: ShoppingItem) {
     if (!selectedList) return
-    await shoppingService.removeItem(selectedList.id, item.id)
-    await loadLists()
+    try {
+      await shoppingService.removeItem(selectedList.id, item.id)
+      await loadLists()
+    } catch (err) {
+      toast.error(extractErrorMessage(err, "No pudimos eliminar el ítem."))
+    }
   }
 
   return (

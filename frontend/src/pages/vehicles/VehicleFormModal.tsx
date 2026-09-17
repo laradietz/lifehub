@@ -4,7 +4,7 @@ import { Alert } from "@/components/ui/Alert"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
 import { Modal } from "@/components/ui/Modal"
-import { extractErrorMessage } from "@/services/api"
+import { extractErrorMessage, extractFieldErrors } from "@/services/api"
 import type { Vehicle, VehiclePayload } from "@/types/vehicle"
 
 interface VehicleFormModalProps {
@@ -27,6 +27,7 @@ const EMPTY_FORM: VehicleFormState = { brand: "", model: "", year: "", license_p
 export function VehicleFormModal({ isOpen, onClose, onSubmit, vehicle }: VehicleFormModalProps) {
   const [form, setForm] = useState(EMPTY_FORM)
   const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
@@ -43,11 +44,13 @@ export function VehicleFormModal({ isOpen, onClose, onSubmit, vehicle }: Vehicle
       setForm(EMPTY_FORM)
     }
     setError(null)
+    setFieldErrors({})
   }, [isOpen, vehicle])
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     setError(null)
+    setFieldErrors({})
     setIsSubmitting(true)
     try {
       await onSubmit({
@@ -60,6 +63,7 @@ export function VehicleFormModal({ isOpen, onClose, onSubmit, vehicle }: Vehicle
       onClose()
     } catch (err) {
       setError(extractErrorMessage(err, "No pudimos guardar el vehículo."))
+      setFieldErrors(extractFieldErrors(err))
     } finally {
       setIsSubmitting(false)
     }
@@ -75,6 +79,7 @@ export function VehicleFormModal({ isOpen, onClose, onSubmit, vehicle }: Vehicle
             label="Marca"
             required
             placeholder="Ej: Toyota"
+            error={fieldErrors.brand}
             value={form.brand}
             onChange={(event) => setForm((current) => ({ ...current, brand: event.target.value }))}
           />
@@ -82,6 +87,7 @@ export function VehicleFormModal({ isOpen, onClose, onSubmit, vehicle }: Vehicle
             label="Modelo"
             required
             placeholder="Ej: Corolla"
+            error={fieldErrors.model}
             value={form.model}
             onChange={(event) => setForm((current) => ({ ...current, model: event.target.value }))}
           />
@@ -92,12 +98,14 @@ export function VehicleFormModal({ isOpen, onClose, onSubmit, vehicle }: Vehicle
             label="Año"
             type="number"
             hint="Opcional"
+            error={fieldErrors.year}
             value={form.year}
             onChange={(event) => setForm((current) => ({ ...current, year: event.target.value }))}
           />
           <Input
             label="Patente"
             hint="Opcional"
+            error={fieldErrors.license_plate}
             value={form.license_plate}
             onChange={(event) => setForm((current) => ({ ...current, license_plate: event.target.value }))}
           />
@@ -107,6 +115,7 @@ export function VehicleFormModal({ isOpen, onClose, onSubmit, vehicle }: Vehicle
           label="Kilometraje"
           type="number"
           hint="Opcional"
+          error={fieldErrors.mileage}
           value={form.mileage}
           onChange={(event) => setForm((current) => ({ ...current, mileage: event.target.value }))}
         />

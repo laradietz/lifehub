@@ -11,7 +11,7 @@ class DocumentBase(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     category: DocumentCategory
     expiry_date: Optional[date] = None
-    notes: Optional[str] = None
+    notes: Optional[str] = Field(default=None, max_length=2000)
 
 
 class DocumentCreate(DocumentBase):
@@ -22,7 +22,7 @@ class DocumentUpdate(BaseModel):
     name: Optional[str] = Field(default=None, min_length=1, max_length=255)
     category: Optional[DocumentCategory] = None
     expiry_date: Optional[date] = None
-    notes: Optional[str] = None
+    notes: Optional[str] = Field(default=None, max_length=2000)
 
 
 class DocumentRead(DocumentBase):

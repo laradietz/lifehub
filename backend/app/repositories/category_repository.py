@@ -16,7 +16,7 @@ class CategoryRepository:
         stmt = select(Category).where(or_(Category.user_id == user_id, Category.user_id.is_(None)))
         if type_ is not None:
             stmt = stmt.where(Category.type == type_)
-        stmt = stmt.order_by(Category.name)
+        stmt = stmt.order_by(Category.name).limit(1000)
         return list(self.db.scalars(stmt))
 
     def get_owned(self, category_id: uuid.UUID, user_id: uuid.UUID) -> Optional[Category]:
